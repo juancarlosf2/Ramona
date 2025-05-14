@@ -4,117 +4,120 @@ import {
   Outlet,
   Scripts,
   createRootRoute,
-} from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { createServerFn } from '@tanstack/react-start'
-import * as React from 'react'
-import { DefaultCatchBoundary } from '../components/DefaultCatchBoundary'
-import { NotFound } from '../components/NotFound'
-import appCss from '../styles/app.css?url'
-import { seo } from '../utils/seo'
-import { getSupabaseServerClient } from '../utils/supabase'
+} from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { createServerFn } from "@tanstack/react-start";
+import * as React from "react";
+import { DefaultCatchBoundary } from "../components/DefaultCatchBoundary";
+import appCss from "../styles/app.css?url";
+import { seo } from "../utils/seo";
+import { getSupabaseServerClient } from "../utils/supabase";
+import { NotFound } from "~/components/NotFound";
 
-const fetchUser = createServerFn({ method: 'GET' }).handler(async () => {
-  const supabase = await getSupabaseServerClient()
-  const { data, error: _error } = await supabase.auth.getUser()
+import { ThemeProvider } from "~/components/theme-provider";
+import { cn } from "~/lib/utils";
+import { AuthProvider } from "~/components/auth-provider";
+
+const fetchUser = createServerFn({ method: "GET" }).handler(async () => {
+  const supabase = await getSupabaseServerClient();
+  const { data, error: _error } = await supabase.auth.getUser();
 
   if (!data.user?.email) {
-    return null
+    return null;
   }
 
   return {
     email: data.user.email,
-  }
-})
+  };
+});
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       {
-        charSet: 'utf-8',
+        charSet: "utf-8",
       },
       {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
       },
       ...seo({
-        title:
-          'TanStack Start | Type-Safe, Client-First, Full-Stack React Framework',
-        description: `TanStack Start is a type-safe, client-first, full-stack React framework. `,
+        title: "Car Dealership Management System",
+        description: `Manage your dealership with ease.`,
       }),
     ],
     links: [
-      { rel: 'stylesheet', href: appCss },
+      { rel: "stylesheet", href: appCss },
       {
-        rel: 'apple-touch-icon',
-        sizes: '180x180',
-        href: '/apple-touch-icon.png',
+        rel: "apple-touch-icon",
+        sizes: "180x180",
+        href: "/apple-touch-icon.png",
       },
       {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '32x32',
-        href: '/favicon-32x32.png',
+        rel: "icon",
+        type: "image/png",
+        sizes: "32x32",
+        href: "/favicon-32x32.png",
       },
       {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '16x16',
-        href: '/favicon-16x16.png',
+        rel: "icon",
+        type: "image/png",
+        sizes: "16x16",
+        href: "/favicon-16x16.png",
       },
-      { rel: 'manifest', href: '/site.webmanifest', color: '#fffff' },
-      { rel: 'icon', href: '/favicon.ico' },
+      { rel: "manifest", href: "/site.webmanifest", color: "#fffff" },
+      { rel: "icon", href: "/favicon.ico" },
     ],
   }),
   beforeLoad: async () => {
-    const user = await fetchUser()
+    const user = await fetchUser();
 
     return {
       user,
-    }
+    };
   },
   errorComponent: (props) => {
     return (
       <RootDocument>
         <DefaultCatchBoundary {...props} />
       </RootDocument>
-    )
+    );
   },
   notFoundComponent: () => <NotFound />,
   component: RootComponent,
-})
+});
 
 function RootComponent() {
   return (
     <RootDocument>
       <Outlet />
     </RootDocument>
-  )
+  );
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const { user } = Route.useRouteContext()
+  const { user } = Route.useRouteContext();
 
   return (
-    <html>
+    <html lang="en">
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className={cn("min-h-dvh bg-background antialiased")}>
         <div className="p-2 flex gap-2 text-lg">
           <Link
             to="/"
             activeProps={{
-              className: 'font-bold',
+              className: "font-bold",
             }}
             activeOptions={{ exact: true }}
           >
             Home
-          </Link>{' '}
+          </Link>{" "}
           <Link
             to="/posts"
             activeProps={{
-              className: 'font-bold',
+              className: "font-bold",
             }}
           >
             Posts
@@ -131,10 +134,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <hr />
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
         <TanStackRouterDevtools position="bottom-right" />
         <Scripts />
       </body>
     </html>
-  )
+  );
 }
