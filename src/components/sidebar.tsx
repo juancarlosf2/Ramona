@@ -129,7 +129,7 @@ export default function Sidebar() {
         <nav className="space-y-6 mt-4">
           <Link
             to="/"
-            className="flex items-center gap-2 font-jakarta-extrabold text-lg"
+            className="flex items-center gap-2 font-extrabold font-jakarta text-lg"
           >
             <Car className="h-6 w-6" />
             <span className={cn(isCollapsed && "hidden")}>AutoGestión</span>
@@ -148,7 +148,7 @@ export default function Sidebar() {
                         key={route.href}
                         to={route.href}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-jakarta-medium transition-all hover:text-primary",
+                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium font-jakarta transition-all hover:text-primary",
                           pathname === route.href
                             ? "bg-accent text-accent-foreground"
                             : "transparent"

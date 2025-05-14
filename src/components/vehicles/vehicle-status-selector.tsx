@@ -182,7 +182,7 @@ export function VehicleStatusSelector({
               <TooltipTrigger asChild>
                 <Badge
                   variant="outline"
-                  className={`${status.color} cursor-pointer transition-all duration-200 font-['Plus_Jakarta_Sans'] font-bold text-[14px] py-1.5 px-2.5 ${
+                  className={`${status.color} cursor-pointer transition-all duration-200 font-jakarta font-bold text-[14px] py-1.5 px-2.5 ${
                     selectedStatus === status.id
                       ? "ring-2 ring-offset-1 ring-primary/30 scale-110"
                       : "opacity-80"

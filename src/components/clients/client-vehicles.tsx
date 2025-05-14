@@ -115,7 +115,7 @@ export function ClientVehicles({ clientId, isLoading }: ClientVehiclesProps) {
                 params={{ vehicleId: vehicle.id }}
                 to={`/vehicles/$vehicleId`}
               >
-                <span className="font-jakarta-extrabold text-center">
+                <span className="font-jakarta font-extrabold text-center">
                   Ver detalles del vehículo
                 </span>
               </Link>

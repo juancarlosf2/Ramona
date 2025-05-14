@@ -258,7 +258,7 @@ export function Stepper({
                 {isCompleted ? (
                   <Check className="h-4 w-4" />
                 ) : (
-                  <span className="font-jakarta-medium">
+                  <span className="font-jakarta font-medium">
                     {step.icon || index + 1}
                   </span>
                 )}
