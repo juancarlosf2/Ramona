@@ -103,7 +103,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className={cn("min-h-dvh bg-background antialiased")}>
+      <body className={cn("min-h-dvh")}>
         <div className="p-2 flex gap-2 text-lg">
           <Link
             to="/"

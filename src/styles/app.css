@@ -1,86 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --font-inter: "Inter", sans-serif;
+    --font-plus-jakarta: "Plus Jakarta Sans", sans-serif;
+    /* Updated color palette with new primary and secondary colors */
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* New primary color: #9653E5 (purple) */
+    --primary: 267 75% 61%;
+    --primary-foreground: 210 40% 98%;
+
+    /* New secondary color: #111111 (dark gray) */
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* More subtle muted tones */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Refined accent for hover states */
+    --accent: 267 75% 97%;
+    --accent-foreground: 267 75% 45%;
+
+    /* Semantic colors */
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 210 40% 98%;
+
+    /* Refined borders and inputs */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 267 75% 61%;
+
+    /* Increased border radius for more modern feel */
+    --radius: 0.75rem;
   }
+
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    /* Refined dark mode palette */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 224 71% 4%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+
+    /* New primary color in dark mode */
+    --primary: 267 75% 61%;
+    --primary-foreground: 210 40% 98%;
+
+    /* New secondary color in dark mode */
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* More distinct muted tones */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    /* Refined accent for hover states */
+    --accent: 267 75% 45%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Semantic colors */
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 210 40% 98%;
+
+    /* Refined borders and inputs */
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 267 75% 61%;
   }
 }
 
@@ -91,4 +96,476 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Enhanced animations for micro-interactions */
+@layer components {
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:translate-y-[-2px];
+  }
+
+  .nav-item {
+    @apply transition-all duration-200;
+  }
+
+  .nav-item-active {
+    @apply bg-accent text-accent-foreground font-medium;
+  }
+
+  .btn-hover {
+    @apply transition-all duration-200 hover:shadow-sm active:translate-y-[1px];
+  }
+
+  /* Remove the circular dependencies by not using @apply with the same name */
+  .custom-fade-in {
+    @apply animate-in fade-in duration-300;
+  }
+
+  .custom-slide-in {
+    @apply animate-in slide-in-from-bottom-5 duration-300;
+  }
+
+  .custom-scale-in {
+    @apply animate-in zoom-in-95 duration-300;
+  }
+
+  /* Custom scrollbar for command palette */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 20px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+  }
+
+  .btn,
+  .button,
+  button[type="button"],
+  button[type="submit"],
+  button[type="reset"],
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline,
+  .btn-ghost,
+  .btn-link {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-weight: 800; /* Extra Bold for buttons, replacing Inter Tight Bold */
+  }
+
+  /* Font weight utility classes for Plus Jakarta Sans */
+  .font-jakarta-regular {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-weight: 400;
+  }
+
+  .font-jakarta-medium {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-weight: 500;
+  }
+
+  .font-jakarta-bold {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-weight: 700;
+  }
+
+  .font-jakarta-extrabold {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-weight: 800;
+  }
+
+  /* Heading styles with Plus Jakarta Sans */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+
+  h1,
+  .h1 {
+    font-weight: 800; /* Extra Bold */
+  }
+
+  h2,
+  .h2,
+  h3,
+  .h3 {
+    font-weight: 700; /* Bold */
+  }
+
+  h4,
+  .h4,
+  h5,
+  .h5,
+  h6,
+  .h6 {
+    font-weight: 500; /* Medium */
+  }
+}
+
+/* Additional keyframes for micro-interactions */
+@keyframes pulse-subtle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.03);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+@keyframes progress-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-progress-fill {
+  animation: progress-fill 0.5s ease-out forwards;
+}
+
+/* Smooth page transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+/* Enhanced focus styles */
+*:focus-visible {
+  @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background transition-shadow duration-200;
+}
+
+/* Enhanced collapsible animations */
+@keyframes collapsible-down {
+  from {
+    height: 0;
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes collapsible-up {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    height: 0;
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.animate-collapsible-down {
+  animation: collapsible-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: height, opacity, transform;
+}
+
+.animate-collapsible-up {
+  animation: collapsible-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: height, opacity, transform;
+}
+
+/* Spring-like easing function */
+.ease-spring {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Additional animation utilities */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+/* Stepper transitions */
+.step-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.step-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+.step-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.step-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+/* Add these styles to the end of the file */
+
+/* Wizard component specific styles */
+.wizard-step-circle {
+  transition: all 0.2s ease-in-out;
+}
+
+.wizard-step-circle.active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wizard-step-circle.completed {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wizard-step-title {
+  transition: all 0.2s ease-in-out;
+}
+
+.wizard-step-subtitle {
+  transition: all 0.2s ease-in-out;
+}
+
+.wizard-progress-line {
+  transition: width 0.5s ease-in-out;
+}
+
+/* Smooth hover transitions */
+@keyframes step-hover {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.wizard-step:hover .wizard-step-circle:not(.active):not(.completed) {
+  border-color: hsl(var(--primary) / 0.5);
+  animation: step-hover 0.5s ease-in-out;
+}
+
+/* Add shake animation for form validation */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Accessibility improvements for better contrast */
+@layer utilities {
+  .text-high-contrast {
+    @apply text-foreground font-medium;
+  }
+
+  .text-medium-contrast {
+    @apply text-foreground/80 font-medium;
+  }
+
+  .text-low-contrast {
+    @apply text-foreground/70 font-medium;
+  }
+
+  .badge-high-contrast {
+    @apply font-medium shadow-sm;
+  }
+
+  .card-high-contrast {
+    @apply border-2 shadow-sm;
+  }
+
+  .focus-visible-improved {
+    @apply focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2;
+  }
+}
+
+/* Improved contrast for card elements */
+.card-label {
+  @apply text-sm font-medium text-foreground/80 mb-1;
+}
+
+.card-value {
+  @apply font-semibold text-foreground;
+}
+
+/* Improved contrast for status badges */
+.status-badge {
+  @apply font-medium shadow-sm;
+}
+
+/* Improved focus states for better accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @apply outline-none ring-2 ring-primary/70 ring-offset-2 ring-offset-background;
+}
+
+@keyframes checkbox-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Remove the default yellow background on autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Confetti animation for signup success */
+@keyframes fall-slow {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fall-medium {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fall-fast {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(1080deg);
+    opacity: 0;
+  }
+}
+
+.animate-fall-slow {
+  animation: fall-slow 6s linear forwards;
+}
+
+.animate-fall-medium {
+  animation: fall-medium 4s linear forwards;
+}
+
+.animate-fall-fast {
+  animation: fall-fast 3s linear forwards;
 }

@@ -55,7 +55,7 @@ const config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
+        sans: ["Plus font-jakarta", "sans-serif"],
         heading: ["Plus font-jakarta", "sans-serif"],
         jakarta: ["Plus font-jakarta", "sans-serif"],
       },

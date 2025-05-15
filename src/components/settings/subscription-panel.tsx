@@ -395,7 +395,7 @@ export function SubscriptionPanel() {
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column - Subscription Plan Details */}
-        <Card className="border border-border rounded-xl bg-background transition-all duration-200 hover:shadow-sm hover:scale-[1.01]">
+        <Card className="border border-border rounded-xl bg-card transition-all duration-200 hover:shadow-sm hover:scale-[1.01]">
           <CardHeader>
             <CardTitle>Tu plan actual</CardTitle>
             <CardDescription>
@@ -496,7 +496,7 @@ export function SubscriptionPanel() {
         {/* Right Column - Billing History and Quick Actions */}
         <div className="space-y-6">
           {/* Billing History */}
-          <Card className="border border-border rounded-xl bg-background transition-all duration-200 hover:shadow-sm hover:scale-[1.01]">
+          <Card className="border border-border rounded-xl bg-card transition-all duration-200 hover:shadow-sm hover:scale-[1.01]">
             <CardHeader>
               <CardTitle>Historial de pagos</CardTitle>
               <CardDescription>
@@ -517,7 +517,7 @@ export function SubscriptionPanel() {
                   {invoiceHistory.map((invoice) => (
                     <TableRow
                       key={invoice.id}
-                      className="hover:bg-accent cursor-pointer transition-colors"
+                      className="hover:bg-muted/50 cursor-pointer transition-colors"
                     >
                       <TableCell>{invoice.date}</TableCell>
                       <TableCell>{invoice.amount}</TableCell>
@@ -561,7 +561,7 @@ export function SubscriptionPanel() {
           </Card>
 
           {/* Quick Actions */}
-          <Card className="border border-border rounded-xl bg-background transition-all duration-200 hover:shadow-sm hover:scale-[1.01]">
+          <Card className="border border-border rounded-xl bg-card transition-all duration-200 hover:shadow-sm hover:scale-[1.01]">
             <CardHeader>
               <CardTitle>Acciones rápidas</CardTitle>
               <CardDescription>Gestiona tu suscripción y pagos</CardDescription>
