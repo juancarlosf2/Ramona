@@ -63,9 +63,9 @@ const config = {
         },
       },
       fontFamily: {
-        sans: ["Plus font-jakarta", "sans-serif"],
-        heading: ["Plus font-jakarta", "sans-serif"],
-        jakarta: ["Plus font-jakarta", "sans-serif"],
+        sans: ["var(--font-jakarta)", "sans-serif"],
+        heading: ["var(--font-jakarta)", "sans-serif"],
+        jakarta: ["var(--font-jakarta)", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
