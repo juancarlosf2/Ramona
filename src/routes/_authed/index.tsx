@@ -19,7 +19,7 @@ import { RefreshCcw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authed/")({
   component: Dashboard,
 });
 

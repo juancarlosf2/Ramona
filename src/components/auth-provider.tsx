@@ -22,7 +22,15 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  user,
+}: {
+  children: ReactNode;
+  user: {
+    email: string;
+  } | null;
+}) {
   const router = useRouter();
   const pathname = router.state.location.pathname;
   const [isAuthenticated, setIsAuthenticated] = useState(true);
@@ -65,7 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Determine if we should show the auth layout or the app layout
-  const isAuthPage = pathname.startsWith("/auth/");
+  const isAuthPage =
+    pathname.startsWith("/login") || pathname.startsWith("/signup");
 
   if (isLoading) {
     return (
@@ -76,7 +85,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!user?.email && pathname !== "/login",
+        login,
+        logout,
+      }}
+    >
       {isAuthPage ? (
         // Auth pages (login, register, etc.) don't have the sidebar
         <>{children}</>

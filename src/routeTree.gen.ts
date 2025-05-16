@@ -15,7 +15,7 @@ import { Route as SignupImport } from './routes/signup'
 import { Route as LogoutImport } from './routes/logout'
 import { Route as LoginImport } from './routes/login'
 import { Route as AuthedImport } from './routes/_authed'
-import { Route as IndexImport } from './routes/index'
+import { Route as AuthedIndexImport } from './routes/_authed/index'
 import { Route as AuthForgotPasswordImport } from './routes/auth/forgot-password'
 import { Route as AuthedSettingsImport } from './routes/_authed/settings'
 import { Route as AuthedPostsImport } from './routes/_authed/posts'
@@ -64,10 +64,10 @@ const AuthedRoute = AuthedImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const IndexRoute = IndexImport.update({
+const AuthedIndexRoute = AuthedIndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => AuthedRoute,
 } as any)
 
 const AuthForgotPasswordRoute = AuthForgotPasswordImport.update({
@@ -214,13 +214,6 @@ const AuthedContractsContractIdEditRoute =
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
     '/_authed': {
       id: '/_authed'
       path: ''
@@ -276,6 +269,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/forgot-password'
       preLoaderRoute: typeof AuthForgotPasswordImport
       parentRoute: typeof rootRoute
+    }
+    '/_authed/': {
+      id: '/_authed/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedIndexImport
+      parentRoute: typeof AuthedImport
     }
     '/_authed/clients/$clientId': {
       id: '/_authed/clients/$clientId'
@@ -426,6 +426,7 @@ interface AuthedRouteChildren {
   AuthedCalendarRoute: typeof AuthedCalendarRoute
   AuthedPostsRoute: typeof AuthedPostsRouteWithChildren
   AuthedSettingsRoute: typeof AuthedSettingsRoute
+  AuthedIndexRoute: typeof AuthedIndexRoute
   AuthedClientsClientIdRoute: typeof AuthedClientsClientIdRoute
   AuthedClientsPurchasedByIdRoute: typeof AuthedClientsPurchasedByIdRoute
   AuthedClientsNewRoute: typeof AuthedClientsNewRoute
@@ -448,6 +449,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedCalendarRoute: AuthedCalendarRoute,
   AuthedPostsRoute: AuthedPostsRouteWithChildren,
   AuthedSettingsRoute: AuthedSettingsRoute,
+  AuthedIndexRoute: AuthedIndexRoute,
   AuthedClientsClientIdRoute: AuthedClientsClientIdRoute,
   AuthedClientsPurchasedByIdRoute: AuthedClientsPurchasedByIdRoute,
   AuthedClientsNewRoute: AuthedClientsNewRoute,
@@ -470,7 +472,6 @@ const AuthedRouteWithChildren =
   AuthedRoute._addFileChildren(AuthedRouteChildren)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
@@ -479,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/posts': typeof AuthedPostsRouteWithChildren
   '/settings': typeof AuthedSettingsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/': typeof AuthedIndexRoute
   '/clients/$clientId': typeof AuthedClientsClientIdRoute
   '/clients/$purchasedById': typeof AuthedClientsPurchasedByIdRoute
   '/clients/new': typeof AuthedClientsNewRoute
@@ -500,14 +502,13 @@ export interface FileRoutesByFullPath {
 }
 
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/signup': typeof SignupRoute
   '/calendar': typeof AuthedCalendarRoute
   '/settings': typeof AuthedSettingsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/': typeof AuthedIndexRoute
   '/clients/$clientId': typeof AuthedClientsClientIdRoute
   '/clients/$purchasedById': typeof AuthedClientsPurchasedByIdRoute
   '/clients/new': typeof AuthedClientsNewRoute
@@ -530,7 +531,6 @@ export interface FileRoutesByTo {
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/': typeof IndexRoute
   '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
@@ -539,6 +539,7 @@ export interface FileRoutesById {
   '/_authed/posts': typeof AuthedPostsRouteWithChildren
   '/_authed/settings': typeof AuthedSettingsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/_authed/': typeof AuthedIndexRoute
   '/_authed/clients/$clientId': typeof AuthedClientsClientIdRoute
   '/_authed/clients/$purchasedById': typeof AuthedClientsPurchasedByIdRoute
   '/_authed/clients/new': typeof AuthedClientsNewRoute
@@ -562,7 +563,6 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | ''
     | '/login'
     | '/logout'
@@ -571,6 +571,7 @@ export interface FileRouteTypes {
     | '/posts'
     | '/settings'
     | '/auth/forgot-password'
+    | '/'
     | '/clients/$clientId'
     | '/clients/$purchasedById'
     | '/clients/new'
@@ -591,14 +592,13 @@ export interface FileRouteTypes {
     | '/vehicles/$vehicleId'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | ''
     | '/login'
     | '/logout'
     | '/signup'
     | '/calendar'
     | '/settings'
     | '/auth/forgot-password'
+    | '/'
     | '/clients/$clientId'
     | '/clients/$purchasedById'
     | '/clients/new'
@@ -619,7 +619,6 @@ export interface FileRouteTypes {
     | '/vehicles/$vehicleId'
   id:
     | '__root__'
-    | '/'
     | '/_authed'
     | '/login'
     | '/logout'
@@ -628,6 +627,7 @@ export interface FileRouteTypes {
     | '/_authed/posts'
     | '/_authed/settings'
     | '/auth/forgot-password'
+    | '/_authed/'
     | '/_authed/clients/$clientId'
     | '/_authed/clients/$purchasedById'
     | '/_authed/clients/new'
@@ -650,7 +650,6 @@ export interface FileRouteTypes {
 }
 
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AuthedRoute: typeof AuthedRouteWithChildren
   LoginRoute: typeof LoginRoute
   LogoutRoute: typeof LogoutRoute
@@ -659,7 +658,6 @@ export interface RootRouteChildren {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AuthedRoute: AuthedRouteWithChildren,
   LoginRoute: LoginRoute,
   LogoutRoute: LogoutRoute,
@@ -677,7 +675,6 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/",
         "/_authed",
         "/login",
         "/logout",
@@ -685,15 +682,13 @@ export const routeTree = rootRoute
         "/auth/forgot-password"
       ]
     },
-    "/": {
-      "filePath": "index.tsx"
-    },
     "/_authed": {
       "filePath": "_authed.tsx",
       "children": [
         "/_authed/calendar",
         "/_authed/posts",
         "/_authed/settings",
+        "/_authed/",
         "/_authed/clients/$clientId",
         "/_authed/clients/$purchasedById",
         "/_authed/clients/new",
@@ -739,6 +734,10 @@ export const routeTree = rootRoute
     },
     "/auth/forgot-password": {
       "filePath": "auth/forgot-password.tsx"
+    },
+    "/_authed/": {
+      "filePath": "_authed/index.tsx",
+      "parent": "/_authed"
     },
     "/_authed/clients/$clientId": {
       "filePath": "_authed/clients/$clientId.tsx",

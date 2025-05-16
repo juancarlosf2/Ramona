@@ -1,5 +1,9 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-// import { Login } from "../components/Login";
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useRouter,
+} from "@tanstack/react-router";
 
 import type React from "react";
 
@@ -20,13 +24,53 @@ import {
   Rocket,
   ArrowRight,
 } from "lucide-react";
+import testimonialImage from "../public/testimonial-1.png";
 import { cn } from "~/lib/utils";
 import { useAuth } from "~/components/auth-provider";
 import { useToast } from "~/hooks/use-toast";
 
+// React Hook Form imports
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
 export const Route = createFileRoute("/login")({
   component: AuthPage,
+  beforeLoad: ({ context }) => {
+    if (context.user) {
+      throw redirect({ to: "/" });
+    }
+  },
 });
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation } from "@tanstack/react-query";
+import { loginFn } from "../routes/_authed";
+import { signupFn } from "../routes/signup";
+
+// Form validation schemas
+const loginSchema = z.object({
+  email: z.string().email("Ingresa un correo electrónico válido"),
+  password: z.string().min(1, "La contraseña es requerida"),
+  remember: z.boolean().optional(),
+});
+
+const signupSchema = z.object({
+  name: z.string().min(2, "Ingresa tu nombre completo"),
+  email: z.string().email("Ingresa un correo electrónico válido"),
+  password: z
+    .string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .regex(/[0-9]/, "La contraseña debe contener al menos un número")
+    .regex(/[A-Z]/, "La contraseña debe contener al menos una letra mayúscula")
+    .regex(
+      /[!@#$%^&*(),.?":{}|<>]/,
+      "La contraseña debe contener al menos un carácter especial"
+    ),
+});
+
+// Types
+type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function AuthPage() {
   const router = useRouter();
@@ -38,11 +82,27 @@ export default function AuthPage() {
   const [showElements, setShowElements] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Form validation states
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [emailValid, setEmailValid] = useState<boolean | null>(null);
+  // React Hook Form setup
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      remember: false,
+    },
+  });
+
+  const signupForm = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+    },
+  });
+
+  // Track password validation state
   const [passwordChecks, setPasswordChecks] = useState({
     length: false,
     number: false,
@@ -50,10 +110,40 @@ export default function AuthPage() {
     special: false,
   });
 
+  // Watch password field to update validation checks
+  const watchedPassword = signupForm.watch("password");
+  useEffect(() => {
+    if (watchedPassword) {
+      setPasswordChecks({
+        length: watchedPassword.length >= 8,
+        number: /\d/.test(watchedPassword),
+        capital: /[A-Z]/.test(watchedPassword),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(watchedPassword),
+      });
+    }
+  }, [watchedPassword]);
+
+  const loginMutation = useMutation({
+    mutationFn: useServerFn(loginFn),
+    onSuccess: async (ctx) => {
+      await router.invalidate();
+      router.navigate({ to: "/" });
+      toast({
+        title: "¡Bienvenido de nuevo!",
+        description: "Has iniciado sesión exitosamente.",
+        variant: "success",
+      });
+      return;
+    },
+  });
+
+  const signupMutation = useMutation({
+    mutationFn: useServerFn(signupFn),
+  });
+
   // Refs for focus management
   const nameInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
-  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // Single testimonial data
   const testimonial = {
@@ -62,7 +152,7 @@ export default function AuthPage() {
     author: "María Rodríguez",
     role: "Gerente de Ventas",
     company: "AutoPremium",
-    image: "/testimonial-1.png",
+    image: testimonialImage,
     query: "professional woman with brown hair in business attire smiling",
   };
 
@@ -71,53 +161,54 @@ export default function AuthPage() {
     setShowElements(true);
   }, []);
 
-  // Email validation
-  const validateEmail = (email: string) => {
-    const re =
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
-  };
+  // Focus first input when tab changes
+  useEffect(() => {
+    if (activeTab === "signin") {
+      emailInputRef.current?.focus();
+    } else {
+      nameInputRef.current?.focus();
+    }
+  }, [activeTab]);
 
-  // Password validation
-  const validatePassword = (password: string) => {
-    setPasswordChecks({
-      length: password.length >= 8,
-      number: /\d/.test(password),
-      capital: /[A-Z]/.test(password),
-      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-    });
-  };
+  // Form submission handlers
+  const handleSignIn = async (data: LoginFormValues) => {
+    setIsLoading(true);
 
-  const handleEmailBlur = () => {
-    if (email) {
-      setEmailValid(validateEmail(email));
+    try {
+      // Use the existing loginMutation with React Hook Form data
+      await loginMutation.mutateAsync({
+        data,
+      });
+
+      // If needed, handle the remember me option
+      if (data.remember) {
+        // Store in localStorage or implement remember me logic
+        localStorage.setItem("rememberEmail", data.email);
+      }
+
+      // Existing success code will be executed in loginMutation.onSuccess
+    } catch (error) {
+      toast({
+        title: "Error al iniciar sesión",
+        description: "Por favor verifica tus credenciales e intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newPassword = e.target.value;
-    setPassword(newPassword);
-    validatePassword(newPassword);
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignUp = async (data: SignupFormValues) => {
     setIsLoading(true);
 
-    // Simulate authentication
-    setTimeout(() => {
-      setIsLoading(false);
-      login(); // This will set isAuthenticated to true and redirect to "/"
-    }, 1500);
-  };
+    try {
+      // Use the existing signupMutation with React Hook Form data
+      await signupMutation.mutateAsync({
+        data: { email: data.email, password: data.password },
+        // TODO: Uncomment when name is available
+        // data: { name: data.name, email: data.email, password: data.password },
+      });
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate registration
-    setTimeout(() => {
-      setIsLoading(false);
       setShowConfetti(true);
 
       toast({
@@ -128,19 +219,18 @@ export default function AuthPage() {
       });
 
       setTimeout(() => {
-        login(); // This will set isAuthenticated to true and redirect to "/"
+        login(); // Set isAuthenticated to true and redirect
       }, 2000);
-    }, 1500);
-  };
-
-  // Focus first input when tab changes
-  useEffect(() => {
-    if (activeTab === "signin") {
-      emailInputRef.current?.focus();
-    } else {
-      nameInputRef.current?.focus();
+    } catch (error) {
+      toast({
+        title: "Error al crear la cuenta",
+        description: "Por favor intenta de nuevo más tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [activeTab]);
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -201,7 +291,7 @@ export default function AuthPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Sign In Form */}
+            {/* Sign In Form with React Hook Form */}
             <TabsContent
               value="signin"
               className="space-y-6 transition-all duration-300 data-[state=inactive]:translate-x-4 data-[state=inactive]:opacity-0 data-[state=active]:translate-x-0 data-[state=active]:opacity-100"
@@ -215,7 +305,10 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleSignIn} className="space-y-6">
+              <form
+                onSubmit={loginForm.handleSubmit(handleSignIn)}
+                className="space-y-6"
+              >
                 <div
                   className="space-y-4"
                   style={
@@ -239,11 +332,24 @@ export default function AuthPage() {
                       id="email"
                       type="email"
                       placeholder="nombre@ejemplo.com"
-                      required
-                      className="h-11 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all"
+                      className={cn(
+                        "h-11 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all",
+                        loginForm.formState.errors.email &&
+                          "border-red-500 focus:ring-red-300/30"
+                      )}
                       aria-describedby="email-description"
-                      ref={emailInputRef}
+                      {...loginForm.register("email")}
+                      ref={(e) => {
+                        // This handles both the RHF registration and our focus ref
+                        loginForm.register("email").ref(e);
+                        emailInputRef.current = e;
+                      }}
                     />
+                    {loginForm.formState.errors.email && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {loginForm.formState.errors.email.message}
+                      </p>
+                    )}
                     <span id="email-description" className="sr-only">
                       Ingresa tu correo electrónico
                     </span>
@@ -273,9 +379,13 @@ export default function AuthPage() {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        required
-                        className="h-11 pr-10 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all"
+                        className={cn(
+                          "h-11 pr-10 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all",
+                          loginForm.formState.errors.password &&
+                            "border-red-500 focus:ring-red-300/30"
+                        )}
                         aria-describedby="password-description"
+                        {...loginForm.register("password")}
                       />
                       <button
                         type="button"
@@ -294,6 +404,11 @@ export default function AuthPage() {
                         )}
                       </button>
                     </div>
+                    {loginForm.formState.errors.password && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {loginForm.formState.errors.password.message}
+                      </p>
+                    )}
                     <span id="password-description" className="sr-only">
                       Ingresa tu contraseña
                     </span>
@@ -310,6 +425,7 @@ export default function AuthPage() {
                     <Checkbox
                       id="remember"
                       className="rounded-md data-[state=checked]:animate-[checkbox-pop_0.2s_ease-in-out]"
+                      {...loginForm.register("remember")}
                     />
                     <label
                       htmlFor="remember"
@@ -330,9 +446,9 @@ export default function AuthPage() {
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-4"
                   )}
-                  disabled={isLoading}
+                  disabled={isLoading || loginMutation.isPending}
                 >
-                  {isLoading ? (
+                  {isLoading || loginMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Iniciando sesión...
@@ -343,59 +459,6 @@ export default function AuthPage() {
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}
-                </Button>
-
-                <div
-                  className={cn(
-                    "relative my-6 transition-all duration-300 delay-[calc(var(--stagger-delay)*5)]",
-                    showElements
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-4"
-                  )}
-                >
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      O continúa con
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    "w-full h-11 text-base font-normal transition-all duration-300 delay-[calc(var(--stagger-delay)*6)] rounded-lg",
-                    "hover:bg-gray-100/50 hover:shadow-md group",
-                    showElements
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-4"
-                  )}
-                >
-                  <svg
-                    className="mr-2 h-5 w-5 transition-transform group-hover:scale-110 duration-300"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  Ingresa con Google
                 </Button>
               </form>
 
@@ -417,7 +480,7 @@ export default function AuthPage() {
               </div>
             </TabsContent>
 
-            {/* Sign Up Form - Enhanced with UX improvements */}
+            {/* Sign Up Form with React Hook Form */}
             <TabsContent
               value="signup"
               className="space-y-6 transition-all duration-300 data-[state=inactive]:translate-x-[-1rem] data-[state=inactive]:opacity-0 data-[state=active]:translate-x-0 data-[state=active]:opacity-100"
@@ -434,7 +497,10 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleSignUp} className="space-y-6">
+              <form
+                onSubmit={signupForm.handleSubmit(handleSignUp)}
+                className="space-y-6"
+              >
                 <div className="space-y-4">
                   {/* Name field with hint */}
                   <div className="space-y-2">
@@ -444,16 +510,28 @@ export default function AuthPage() {
                     <Input
                       id="name"
                       placeholder="Juan Pérez"
-                      required
-                      className="h-11 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all"
+                      className={cn(
+                        "h-11 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all",
+                        signupForm.formState.errors.name &&
+                          "border-red-500 focus:ring-red-300/30"
+                      )}
                       aria-describedby="name-description"
-                      ref={nameInputRef}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      {...signupForm.register("name")}
+                      ref={(e) => {
+                        // This handles both the RHF registration and our focus ref
+                        signupForm.register("name").ref(e);
+                        nameInputRef.current = e;
+                      }}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Ej: Juan Pérez
-                    </p>
+                    {signupForm.formState.errors.name ? (
+                      <p className="text-xs text-red-500 mt-1">
+                        {signupForm.formState.errors.name.message}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ej: Juan Pérez
+                      </p>
+                    )}
                   </div>
 
                   {/* Email field with validation */}
@@ -469,41 +547,36 @@ export default function AuthPage() {
                         id="email-signup"
                         type="email"
                         placeholder="nombre@ejemplo.com"
-                        required
                         className={cn(
                           "h-11 rounded-lg transition-all pr-10",
-                          emailValid === true &&
-                            "border-green-500 focus:ring-green-300/30",
-                          emailValid === false &&
+                          signupForm.formState.errors.email &&
                             "border-red-500 focus:ring-red-300/30",
-                          emailValid === null &&
-                            "focus:ring-2 focus:ring-primary/30"
+                          !signupForm.formState.errors.email &&
+                            signupForm.formState.dirtyFields.email &&
+                            "border-green-500 focus:ring-green-300/30"
                         )}
                         aria-describedby="email-signup-description"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onBlur={handleEmailBlur}
+                        {...signupForm.register("email")}
                       />
-                      {emailValid !== null && (
+                      {signupForm.formState.dirtyFields.email && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          {emailValid ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          ) : (
+                          {signupForm.formState.errors.email ? (
                             <XCircle className="h-5 w-5 text-red-500" />
+                          ) : (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
                           )}
                         </div>
                       )}
                     </div>
-                    {emailValid === false && (
+                    {signupForm.formState.errors.email ? (
                       <p className="text-xs text-red-500 mt-1">
-                        Este correo electrónico parece incorrecto
+                        {signupForm.formState.errors.email.message}
                       </p>
-                    )}
-                    {emailValid === true && (
+                    ) : signupForm.formState.dirtyFields.email ? (
                       <p className="text-xs text-green-500 mt-1">
                         Correo electrónico válido
                       </p>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* Password field with real-time validation */}
@@ -519,15 +592,18 @@ export default function AuthPage() {
                         id="password-signup"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        required
-                        className="h-11 pr-10 rounded-lg focus:ring-2 focus:ring-primary/30 transition-all"
+                        className={cn(
+                          "h-11 pr-10 rounded-lg transition-all",
+                          signupForm.formState.errors.password
+                            ? "border-destructive focus-visible:ring-destructive/20"
+                            : "focus-visible:ring-primary/20"
+                        )}
                         aria-describedby="password-signup-description"
-                        value={password}
-                        onChange={handlePasswordChange}
+                        {...signupForm.register("password")}
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label={
                           showPassword
@@ -550,21 +626,21 @@ export default function AuthPage() {
                           className={cn(
                             "transition-colors",
                             passwordChecks.length
-                              ? "text-green-500"
-                              : "text-gray-400"
+                              ? "text-success"
+                              : "text-muted-foreground/70"
                           )}
                         >
                           {passwordChecks.length ? (
                             <CheckCircle2 size={14} />
                           ) : (
-                            <div className="w-3.5 h-3.5 rounded-full border border-gray-400" />
+                            <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
                           )}
                         </div>
                         <span
                           className={
                             passwordChecks.length
-                              ? "text-green-700"
-                              : "text-gray-500"
+                              ? "text-success font-medium"
+                              : "text-muted-foreground"
                           }
                         >
                           Mínimo 8 caracteres
@@ -575,21 +651,21 @@ export default function AuthPage() {
                           className={cn(
                             "transition-colors",
                             passwordChecks.number
-                              ? "text-green-500"
-                              : "text-gray-400"
+                              ? "text-success"
+                              : "text-muted-foreground/70"
                           )}
                         >
                           {passwordChecks.number ? (
                             <CheckCircle2 size={14} />
                           ) : (
-                            <div className="w-3.5 h-3.5 rounded-full border border-gray-400" />
+                            <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
                           )}
                         </div>
                         <span
                           className={
                             passwordChecks.number
-                              ? "text-green-700"
-                              : "text-gray-500"
+                              ? "text-success font-medium"
+                              : "text-muted-foreground"
                           }
                         >
                           Al menos un número
@@ -600,21 +676,21 @@ export default function AuthPage() {
                           className={cn(
                             "transition-colors",
                             passwordChecks.capital
-                              ? "text-green-500"
-                              : "text-gray-400"
+                              ? "text-success"
+                              : "text-muted-foreground/70"
                           )}
                         >
                           {passwordChecks.capital ? (
                             <CheckCircle2 size={14} />
                           ) : (
-                            <div className="w-3.5 h-3.5 rounded-full border border-gray-400" />
+                            <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
                           )}
                         </div>
                         <span
                           className={
                             passwordChecks.capital
-                              ? "text-green-700"
-                              : "text-gray-500"
+                              ? "text-success font-medium"
+                              : "text-muted-foreground"
                           }
                         >
                           Al menos una letra mayúscula
@@ -625,36 +701,46 @@ export default function AuthPage() {
                           className={cn(
                             "transition-colors",
                             passwordChecks.special
-                              ? "text-green-500"
-                              : "text-gray-400"
+                              ? "text-success"
+                              : "text-muted-foreground/70"
                           )}
                         >
                           {passwordChecks.special ? (
                             <CheckCircle2 size={14} />
                           ) : (
-                            <div className="w-3.5 h-3.5 rounded-full border border-gray-400" />
+                            <div className="w-3.5 h-3.5 rounded-full border border-muted-foreground/40" />
                           )}
                         </div>
                         <span
                           className={
                             passwordChecks.special
-                              ? "text-green-700"
-                              : "text-gray-500"
+                              ? "text-success font-medium"
+                              : "text-muted-foreground"
                           }
                         >
                           Al menos un carácter especial
                         </span>
                       </div>
                     </div>
+
+                    {signupForm.formState.errors.password && (
+                      <p className="text-xs text-destructive mt-1">
+                        {signupForm.formState.errors.password.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-11 text-base font-medium transition-all duration-300 rounded-lg bg-gradient-to-r from-primary to-primary hover:from-primary/90 hover:to-primary hover:shadow-lg hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 group"
-                  disabled={isLoading}
+                  className="w-full h-11 text-base font-medium transition-all duration-300 rounded-lg bg-primary hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 group"
+                  disabled={
+                    isLoading ||
+                    signupMutation.isPending ||
+                    !signupForm.formState.isValid
+                  }
                 >
-                  {isLoading ? (
+                  {isLoading || signupMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Creando cuenta...
@@ -666,57 +752,6 @@ export default function AuthPage() {
                     </>
                   )}
                 </Button>
-
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      O continúa con
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-11 text-base font-normal transition-all duration-300 rounded-lg hover:bg-gray-100/50 hover:shadow-md group"
-                >
-                  <svg
-                    className="mr-2 h-5 w-5 transition-transform group-hover:scale-110 duration-300"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  Ingresa con Google
-                </Button>
-
-                <div className="text-center text-sm mt-8">
-                  ¿Ya tienes una cuenta?{" "}
-                  <button
-                    className="font-medium text-primary hover:text-purple-600 hover:underline transition-colors inline-flex items-center"
-                    onClick={() => setActiveTab("signin")}
-                  >
-                    Inicia sesión
-                    <ArrowRight className="ml-1 h-3 w-3" />
-                  </button>
-                </div>
               </form>
             </TabsContent>
           </Tabs>
@@ -726,11 +761,15 @@ export default function AuthPage() {
       {/* Right Panel - Single Testimonial with new design */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
         {/* Background Image */}
-        <div
+        <img
           className="absolute inset-0 bg-cover bg-center h-full w-full"
-          style={{
-            backgroundImage: `url(${testimonial.image || `/placeholder.svg?height=1080&width=720&query=${encodeURIComponent(testimonial.query || "")}`})`,
-          }}
+          alt=""
+          src={
+            testimonial.image ||
+            `../assets/placeholder.svg?height=1080&width=720&query=${encodeURIComponent(
+              testimonial.query || ""
+            )}`
+          }
         />
 
         {/* Frosted Glass Testimonial Overlay */}
@@ -760,7 +799,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-// function LoginComp() {
-//   return <Login />
-// }

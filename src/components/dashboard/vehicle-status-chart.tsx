@@ -10,7 +10,7 @@ const data = [
   { name: "En mantenimiento", value: 4, color: "#EF4444" },
 ];
 
-export function VehicleStatusChart() {
+export function VehicleStatusChart({ period = "30days" }: { period?: string }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 

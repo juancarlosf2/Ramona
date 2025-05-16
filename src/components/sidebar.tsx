@@ -11,7 +11,7 @@ import {
 import { cn, generateAvatarColor, getInitials } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { useAuth } from "~/components/auth-provider";
 import { Link, useRouter } from "@tanstack/react-router";
 
@@ -19,7 +19,6 @@ export default function Sidebar() {
   const router = useRouter();
 
   const pathname = router.state.location.pathname;
-  const { logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -46,12 +45,6 @@ export default function Sidebar() {
       window.removeEventListener("resize", checkIfMobile);
     };
   }, []);
-
-  // Handle sign out
-  const handleSignOut = () => {
-    // Use the logout function from auth context
-    logout();
-  };
 
   // Define categories and their routes
   const categories = [
@@ -219,15 +212,18 @@ export default function Sidebar() {
                 </span>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-              onClick={handleSignOut}
+            <Link
+              className={buttonVariants({
+                variant: "outline",
+                size: "sm",
+                class:
+                  "w-full justify-start text-muted-foreground hover:text-foreground",
+              })}
+              to="/logout"
             >
               <LogOut className="mr-2 h-4 w-4" />
               Cerrar sesión
-            </Button>
+            </Link>
           </div>
         ) : (
           <div className="flex flex-col items-center">
@@ -239,15 +235,17 @@ export default function Sidebar() {
                 {getInitials(user.name)}
               </AvatarFallback>
             </Avatar>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleSignOut}
+            <Link
+              to="/logout"
+              className={buttonVariants({
+                class: "h-8 w-8",
+                variant: "ghost",
+                size: "icon",
+              })}
             >
               <LogOut className="h-4 w-4" />
               <span className="sr-only">Cerrar sesión</span>
-            </Button>
+            </Link>
           </div>
         )}
       </div>
