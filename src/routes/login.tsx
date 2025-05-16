@@ -762,7 +762,7 @@ export default function AuthPage() {
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
         {/* Background Image */}
         <img
-          className="absolute inset-0 bg-cover bg-center h-full w-full"
+          className="absolute inset-0 h-full w-full object-cover object-center min-w-full"
           alt=""
           src={
             testimonial.image ||
