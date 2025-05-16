@@ -12,6 +12,9 @@ import {
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Link } from "@tanstack/react-router";
+import classicRedConvertible from "../../public/classic-red-convertible.png";
+import modernFamilySuv from "../../public/modern-family-suv.png";
+import placeholderImage from "../../public/placeholder.svg";
 
 // Mock vehicle data
 const vehiclesData = [
@@ -22,7 +25,7 @@ const vehiclesData = [
     vin: "1HGCM82633A123456",
     price: "$32,500.00",
     purchaseDate: "15 Nov 2023",
-    image: "/classic-red-convertible.png",
+    image: classicRedConvertible,
   },
   {
     id: "2",
@@ -31,7 +34,7 @@ const vehiclesData = [
     vin: "5J6RW2H89NL003456",
     price: "$29,800.00",
     purchaseDate: "Pendiente",
-    image: "/modern-family-suv.png",
+    image: modernFamilySuv,
   },
 ];
 
@@ -79,7 +82,7 @@ export function ClientVehicles({ clientId, isLoading }: ClientVehiclesProps) {
         >
           <div className="relative h-[200px] w-full overflow-hidden">
             <img
-              src={vehicle.image || "/placeholder.svg"}
+              src={vehicle.image || placeholderImage}
               alt={`${vehicle.year} ${vehicle.model}`}
               className="w-full h-full object-cover"
             />

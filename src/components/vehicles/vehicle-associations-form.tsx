@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import type { VehicleFormValues } from "~/routes/vehicles/new/page";
+import type { VehicleFormValues } from "~/components/vehicles/new-vehicle-schema";
 import {
   FormField,
   FormItem,
@@ -21,6 +21,8 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Check, Info, Save, User } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
+import placeholderImage from "../../public/placeholder.svg";
+import diverseAvatars from "~/public/diverse-avatars.png";
 
 interface VehicleAssociationsFormProps {
   form: UseFormReturn<VehicleFormValues>;
@@ -54,21 +56,21 @@ export function VehicleAssociationsForm({
           name: "Juan Pérez",
           email: "juan@example.com",
           cedula: "001-1234567-8",
-          avatar: "/diverse-avatars.png",
+          avatar: "/diverseAvatars.png",
         },
         {
           id: "client2",
           name: "María Rodríguez",
           email: "maria@example.com",
           cedula: "002-7654321-9",
-          avatar: "/diverse-avatars.png",
+          avatar: "/diverseAvatars.png",
         },
         {
           id: "client3",
           name: "Carlos Méndez",
           email: "carlos@example.com",
           cedula: "003-9876543-0",
-          avatar: "/diverse-avatars.png",
+          avatar: "/diverseAvatars.png",
         },
       ].filter(
         (client) =>
@@ -151,7 +153,7 @@ export function VehicleAssociationsForm({
                           >
                             <Avatar className="h-8 w-8">
                               <AvatarImage
-                                src={client.avatar || "/placeholder.svg"}
+                                src={client.avatar || placeholderImage}
                                 alt={client.name}
                               />
                               <AvatarFallback>
@@ -183,7 +185,7 @@ export function VehicleAssociationsForm({
                 <div className="flex items-center gap-3 p-3 border rounded-md animate-in fade-in-50 slide-in-from-top-2 duration-300">
                   <Avatar className="h-10 w-10">
                     <AvatarImage
-                      src="/diverse-avatars.png"
+                      src="/diverseAvatars.png"
                       alt={form.watch("clientName")}
                     />
                     <AvatarFallback>

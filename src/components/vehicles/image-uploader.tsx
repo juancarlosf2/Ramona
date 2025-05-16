@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { ImagePlus, X, MoveVertical, Edit, Trash2 } from "lucide-react";
+import placeholderImage from "../../public/placeholder.svg";
 
 interface ImageUploaderProps {
   value: string[];
@@ -27,7 +28,7 @@ export function ImageUploader({ value, onChange }: ImageUploaderProps) {
         const newImages = Array.from(e.target.files || []).map((file) => {
           // In a real app, you would upload the file to a server and get a URL back
           // For this demo, we'll use a placeholder
-          return `/placeholder.svg?height=400&width=600&query=car`;
+          return placeholderImage;
         });
 
         const updatedImages = [...images, ...newImages];
@@ -94,7 +95,7 @@ export function ImageUploader({ value, onChange }: ImageUploaderProps) {
       setTimeout(() => {
         const newImages = Array.from(e.dataTransfer.files).map(() => {
           // In a real app, you would upload the file to a server and get a URL back
-          return `/placeholder.svg?height=400&width=600&query=car`;
+          return placeholderImage;
         });
 
         const updatedImages = [...images, ...newImages];

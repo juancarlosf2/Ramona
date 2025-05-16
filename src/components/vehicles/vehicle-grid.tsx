@@ -54,6 +54,7 @@ import {
 } from "~/components/ui/dialog";
 import { toast } from "~/hooks/use-toast";
 import { Link, useRouter } from "@tanstack/react-router";
+import diverseAvatars from "../../public/diverse-avatars.png";
 
 // Vehicle type definition
 type Vehicle = {
@@ -316,7 +317,7 @@ const vehiclesData: Vehicle[] = [
     assignedTo: {
       id: "a1",
       name: "Carlos Méndez",
-      avatar: "/diverse-avatars.png",
+      avatar: diverseAvatars,
     },
   },
   {
@@ -399,7 +400,7 @@ const vehiclesData: Vehicle[] = [
     assignedTo: {
       id: "a2",
       name: "María Rodríguez",
-      avatar: "/diverse-avatars.png",
+      avatar: diverseAvatars,
     },
   },
   {

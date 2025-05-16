@@ -15,7 +15,11 @@ import { Button, buttonVariants } from "~/components/ui/button";
 import { useAuth } from "~/components/auth-provider";
 import { Link, useRouter } from "@tanstack/react-router";
 
-export default function Sidebar() {
+export default function Sidebar({
+  user: userData,
+}: {
+  user: { email: string };
+}) {
   const router = useRouter();
 
   const pathname = router.state.location.pathname;
@@ -25,7 +29,7 @@ export default function Sidebar() {
   // Mock user data - in a real app, this would come from authentication context
   const user = {
     name: "Carlos Mendez",
-    email: "carlos@autogestión.com",
+    email: userData.email,
     role: "Administrador",
   };
 
