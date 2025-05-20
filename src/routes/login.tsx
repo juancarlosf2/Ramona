@@ -30,7 +30,7 @@ import { useAuth } from "~/components/auth-provider";
 import { useToast } from "~/hooks/use-toast";
 
 // React Hook Form imports
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
@@ -44,8 +44,12 @@ export const Route = createFileRoute("/login")({
 });
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
-import { loginFn } from "../routes/_authed";
-import { signupFn } from "../routes/signup";
+import {
+  signupFn,
+  signupSchema,
+  SignupSchemaTypes,
+} from "~/services/auth/signup";
+import { loginFn } from "./_authed";
 
 // Form validation schemas
 const loginSchema = z.object({
@@ -54,23 +58,8 @@ const loginSchema = z.object({
   remember: z.boolean().optional(),
 });
 
-const signupSchema = z.object({
-  name: z.string().min(2, "Ingresa tu nombre completo"),
-  email: z.string().email("Ingresa un correo electrónico válido"),
-  password: z
-    .string()
-    .min(8, "La contraseña debe tener al menos 8 caracteres")
-    .regex(/[0-9]/, "La contraseña debe contener al menos un número")
-    .regex(/[A-Z]/, "La contraseña debe contener al menos una letra mayúscula")
-    .regex(
-      /[!@#$%^&*(),.?":{}|<>]/,
-      "La contraseña debe contener al menos un carácter especial"
-    ),
-});
-
 // Types
 type LoginFormValues = z.infer<typeof loginSchema>;
-type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function AuthPage() {
   const router = useRouter();
@@ -78,7 +67,6 @@ export default function AuthPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("signin");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [showElements, setShowElements] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -92,7 +80,7 @@ export default function AuthPage() {
     },
   });
 
-  const signupForm = useForm<SignupFormValues>({
+  const signupForm = useForm<SignupSchemaTypes>({
     resolver: zodResolver(signupSchema),
     mode: "onChange",
     defaultValues: {
@@ -138,7 +126,7 @@ export default function AuthPage() {
   });
 
   const signupMutation = useMutation({
-    mutationFn: useServerFn(signupFn),
+    mutationFn: signupFn,
   });
 
   // Refs for focus management
@@ -172,8 +160,6 @@ export default function AuthPage() {
 
   // Form submission handlers
   const handleSignIn = async (data: LoginFormValues) => {
-    setIsLoading(true);
-
     try {
       // Use the existing loginMutation with React Hook Form data
       await loginMutation.mutateAsync({
@@ -193,43 +179,38 @@ export default function AuthPage() {
         description: "Por favor verifica tus credenciales e intenta de nuevo.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleSignUp = async (data: SignupFormValues) => {
-    setIsLoading(true);
-
-    try {
-      // Use the existing signupMutation with React Hook Form data
-      await signupMutation.mutateAsync({
-        data: { email: data.email, password: data.password },
-        // TODO: Uncomment when name is available
-        // data: { name: data.name, email: data.email, password: data.password },
-      });
-
-      setShowConfetti(true);
-
-      toast({
-        title: "¡Cuenta creada exitosamente!",
-        description:
-          "Bienvenido a AutoGestión. Tu prueba de 30 días ha comenzado.",
-        variant: "success",
-      });
-
-      setTimeout(() => {
-        login(); // Set isAuthenticated to true and redirect
-      }, 2000);
-    } catch (error) {
-      toast({
-        title: "Error al crear la cuenta",
-        description: "Por favor intenta de nuevo más tarde.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSignUp: SubmitHandler<SignupSchemaTypes> = async (
+    data: SignupSchemaTypes
+  ) => {
+    // Use the existing signupMutation with React Hook Form data
+    signupMutation.mutate(
+      {
+        // TODO!: Add redirect URL to an email confirmation page
+        data: { email: data.email, password: data.password, name: data.name },
+      },
+      {
+        onError: (error) => {
+          console.log(error);
+          toast({
+            title: "Error al crear la cuenta",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+        onSuccess: () => {
+          setShowConfetti(true);
+          toast({
+            title: "¡Cuenta creada exitosamente!",
+            description:
+              "Revisa tu correo electrónico para confirmar tu cuenta.",
+            variant: "success",
+          });
+        },
+      }
+    );
   };
 
   return (
@@ -446,9 +427,9 @@ export default function AuthPage() {
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-4"
                   )}
-                  disabled={isLoading || loginMutation.isPending}
+                  disabled={loginMutation.isPending}
                 >
-                  {isLoading || loginMutation.isPending ? (
+                  {loginMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Iniciando sesión...
@@ -735,12 +716,10 @@ export default function AuthPage() {
                   type="submit"
                   className="w-full h-11 text-base font-medium transition-all duration-300 rounded-lg bg-primary hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 group"
                   disabled={
-                    isLoading ||
-                    signupMutation.isPending ||
-                    !signupForm.formState.isValid
+                    signupMutation.isPending || !signupForm.formState.isValid
                   }
                 >
-                  {isLoading || signupMutation.isPending ? (
+                  {signupMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Creando cuenta...
@@ -748,7 +727,7 @@ export default function AuthPage() {
                   ) : (
                     <>
                       Comenzar ahora
-                      <Rocket className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      <Rocket className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
                     </>
                   )}
                 </Button>

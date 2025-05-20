@@ -18,7 +18,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 export default function Sidebar({
   user: userData,
 }: {
-  user: { email: string };
+  user: { email: string; username: string };
 }) {
   const router = useRouter();
 
@@ -28,7 +28,7 @@ export default function Sidebar({
 
   // Mock user data - in a real app, this would come from authentication context
   const user = {
-    name: "Carlos Mendez",
+    name: userData.username,
     email: userData.email,
     role: "Administrador",
   };

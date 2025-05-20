@@ -17,6 +17,7 @@ import { NotFound } from "~/components/NotFound";
 import { ThemeProvider } from "~/components/theme-provider";
 import { cn } from "~/lib/utils";
 import { AuthProvider } from "~/components/auth-provider";
+import { Toaster } from "~/components/ui/toaster";
 
 const fetchUser = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = await getSupabaseServerClient();
@@ -28,6 +29,7 @@ const fetchUser = createServerFn({ method: "GET" }).handler(async () => {
 
   return {
     email: data.user.email,
+    username: data.user.user_metadata.username,
   };
 });
 
@@ -114,6 +116,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <AuthProvider user={user}>{children}</AuthProvider>
         </ThemeProvider>
         <TanStackRouterDevtools position="bottom-right" />
+        <Toaster />
         <Scripts />
       </body>
     </html>
