@@ -3,8 +3,8 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import React from "react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { z } from "zod/v4";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import {
@@ -34,31 +34,39 @@ import {
   MapPin,
   CreditCard,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { cn, formatCurrency } from "~/lib/utils";
 import { Wizard, type WizardStep } from "~/components/ui/wizard";
+import {
+  useAvailableVehicles,
+  useCreateClient,
+  useCreateContract,
+  getErrorMessage,
+} from "~/hooks/useSupabaseData";
+import { Button } from "~/components/ui/button";
+import { toast, useToast } from "~/hooks/use-toast";
 
 // Define the form schema with Zod
 const clientFormSchema = z.object({
   // Step 1: Client Data
   cedula: z
     .string()
-    .min(11, "La cédula debe tener 11 dígitos")
-    .max(13, "Formato de cédula inválido"),
-  name: z.string().min(2, "El nombre es requerido"),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
+    .min(11, { error: "La cédula debe tener 11 dígitos" })
+    .max(13, { error: "Formato de cédula inválido" }),
+  name: z.string().min(2, { error: "El nombre es requerido" }),
+  email: z.email({ error: "Email Inválido" }).optional(),
   phone: z
     .string()
     .min(10, "El teléfono debe tener al menos 10 dígitos")
-    .optional()
-    .or(z.literal("")),
-  address: z.string().min(5, "La dirección es requerida"),
+    .optional(),
+  address: z.string().min(5, { error: "La dirección es requerida" }),
 
   // Step 2: Vehicle Selection
-  vehicleId: z.string().min(1, "Debe seleccionar un vehículo"),
+  vehicleId: z.string().min(1, { error: "Debe seleccionar un vehículo" }),
 
   // Step 3: Sale Terms
-  price: z.string().min(1, "El precio es requerido"),
+  price: z.string().min(1, { error: "El precio es requerido" }),
   paymentMethod: z.enum(["cash", "financing"]),
   downPayment: z.string().optional(),
   months: z.string().optional(),
@@ -70,7 +78,7 @@ const clientFormSchema = z.object({
 
 type ClientFormValues = z.infer<typeof clientFormSchema>;
 
-// Sample vehicle data
+// Sample vehicle data (remove this once we connect to the server)
 const vehicles = [
   {
     id: "1",
@@ -110,11 +118,23 @@ export const Route = createFileRoute("/_authed/clients/new")({
 
 export default function NewClientPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+
+  // Fetch available vehicles from the server
+  const {
+    data: availableVehicles = [],
+    isLoading: isLoadingVehicles,
+    error: vehiclesError,
+  } = useAvailableVehicles();
+
+  // Mutations for creating client and contract
+  const createClientMutation = useCreateClient();
+  const createContractMutation = useCreateContract();
 
   // Define form with react-hook-form
   const form = useForm<ClientFormValues>({
-    resolver: zodResolver(clientFormSchema),
+    resolver: standardSchemaResolver(clientFormSchema),
     defaultValues: {
       cedula: "",
       name: "",
@@ -160,18 +180,7 @@ export default function NewClientPage() {
         form.setValue("monthlyPayment", formatCurrency(monthly));
       }
     }
-  }, [price, downPayment, months, paymentMethod, form]);
-
-  // Update selected vehicle when vehicleId changes
-  React.useEffect(() => {
-    if (vehicleId) {
-      const vehicle = vehicles.find((v) => v.id === vehicleId);
-      if (vehicle) {
-        setSelectedVehicle(vehicle);
-        form.setValue("price", formatCurrency(vehicle.price));
-      }
-    }
-  }, [vehicleId, form]);
+  }, [price, downPayment, months, paymentMethod]);
 
   // Format cedula as user types
   const formatCedula = (value: string) => {
@@ -221,12 +230,47 @@ export default function NewClientPage() {
   };
 
   // Handle form submission
-  const onSubmit = (data: ClientFormValues) => {
-    console.log("Form submitted:", data);
-    // Here you would typically send the data to your API
-    alert("Cliente registrado con éxito. El contrato ha sido generado.");
-    // Navigate back to clients list after successful submission
-    router.navigate({ to: "/clients" });
+  const onSubmit = async (data: ClientFormValues) => {
+    try {
+      // First create the client
+      const client = await createClientMutation.mutateAsync({
+        cedula: data.cedula.replace(/\D/g, ""), // Remove formatting
+        name: data.name,
+        email: data.email || undefined,
+        phone: data.phone?.replace(/\D/g, "") || undefined, // Remove formatting
+        address: data.address,
+      });
+
+      // Then create the contract
+      await createContractMutation.mutateAsync({
+        clientId: client.id,
+        vehicleId: data.vehicleId,
+        price: Number.parseFloat(data.price.replace(/[^\d.]/g, "")),
+        paymentMethod: data.paymentMethod,
+        downPayment: data.downPayment
+          ? Number.parseFloat(data.downPayment.replace(/[^\d.]/g, ""))
+          : null,
+        months: data.months ? Number.parseInt(data.months) : null,
+        monthlyPayment: data.monthlyPayment
+          ? Number.parseFloat(data.monthlyPayment.replace(/[^\d.]/g, ""))
+          : null,
+        notes: data.notes || undefined,
+      });
+
+      toast({
+        title: "Cliente registrado con éxito",
+        description: "El cliente y contrato han sido creados correctamente.",
+      });
+
+      // Navigate back to clients list after successful submission
+      router.navigate({ to: "/clients" });
+    } catch (error) {
+      toast({
+        title: "Error al registrar cliente",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    }
   };
 
   // Define wizard steps
@@ -367,16 +411,50 @@ export default function NewClientPage() {
                   <span className="text-destructive ml-1">*</span>
                 </FormLabel>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+
+                    // Only find vehicle from available vehicles - no fallback
+                    const vehicle = availableVehicles.find(
+                      (v) => v.id === value
+                    );
+
+                    if (vehicle) {
+                      console.log("Selected vehicle:", vehicle);
+                      setSelectedVehicle(vehicle);
+                      form.setValue("price", vehicle.price.toString());
+                    }
+                  }}
                   defaultValue={field.value}
+                  disabled={isLoadingVehicles || availableVehicles.length === 0}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecciona un vehículo" />
+                      <SelectValue
+                        placeholder={
+                          isLoadingVehicles
+                            ? "Cargando vehículos..."
+                            : availableVehicles.length === 0
+                              ? "No hay vehículos disponibles"
+                              : "Selecciona un vehículo"
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {vehicles.map((vehicle) => (
+                    {vehiclesError && (
+                      <div className="p-2 text-sm text-destructive">
+                        Error: {getErrorMessage(vehiclesError)}
+                      </div>
+                    )}
+                    {availableVehicles.length === 0 &&
+                      !isLoadingVehicles &&
+                      !vehiclesError && (
+                        <div className="p-2 text-sm text-muted-foreground">
+                          No hay vehículos disponibles para asignar
+                        </div>
+                      )}
+                    {availableVehicles.map((vehicle) => (
                       <SelectItem key={vehicle.id} value={vehicle.id}>
                         {vehicle.brand} {vehicle.model} {vehicle.year} -{" "}
                         {vehicle.color}
@@ -385,6 +463,28 @@ export default function NewClientPage() {
                   </SelectContent>
                 </Select>
                 <FormMessage />
+                {availableVehicles.length === 0 &&
+                  !isLoadingVehicles &&
+                  !vehiclesError && (
+                    <FormDescription className="flex items-center gap-2 text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      No hay vehículos disponibles.{" "}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.navigate({ to: "/vehicles/register" })
+                        }
+                        className="text-primary underline hover:no-underline"
+                      >
+                        Registrar un nuevo vehículo
+                      </button>
+                    </FormDescription>
+                  )}
+                {vehiclesError && (
+                  <FormDescription className="text-destructive">
+                    {getErrorMessage(vehiclesError)}
+                  </FormDescription>
+                )}
               </FormItem>
             )}
           />
@@ -432,6 +532,17 @@ export default function NewClientPage() {
         </div>
       ),
       validate: async () => {
+        // Check if there are available vehicles first
+        if (availableVehicles.length === 0) {
+          toast({
+            title: "No hay vehículos disponibles",
+            description:
+              "Debe registrar al menos un vehículo disponible para asignar a un cliente.",
+            variant: "destructive",
+          });
+          return false;
+        }
+
         const result = await form.trigger(["vehicleId"]);
         return result;
       },
@@ -748,7 +859,11 @@ export default function NewClientPage() {
             description="Complete la información para registrar un nuevo cliente y generar un contrato"
             onComplete={form.handleSubmit(onSubmit)}
             cancelHref="/clients"
-            completeText="Generar Contrato"
+            completeText={
+              createClientMutation.isPending || createContractMutation.isPending
+                ? "Generando Contrato..."
+                : "Generar Contrato"
+            }
             autoSave={true}
           />
         </form>

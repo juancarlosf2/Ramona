@@ -48,6 +48,19 @@ export function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+export function parseCurrency(
+  value: string | number | null | undefined
+): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return value;
+  // Remove non-digit characters and parse as number
+  const cleanedValue = String(value)
+    .replace(/[^\d.,]/g, "")
+    .replace(",", ".");
+  const numericValue = parseFloat(cleanedValue);
+  return isNaN(numericValue) ? null : numericValue;
+}
+
 export function formatDate(dateString: string) {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("es-DO", {

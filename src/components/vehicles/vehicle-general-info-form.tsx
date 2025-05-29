@@ -162,7 +162,7 @@ export function VehicleGeneralInfoForm({ form }: VehicleGeneralInfoFormProps) {
         <FormField
           control={form.control}
           name="year"
-          render={({ field }) => (
+          render={({ field: { value, onChange, ...field } }) => (
             <FormItem>
               <FormLabel>
                 Año<span className="text-destructive ml-1">*</span>
@@ -174,6 +174,12 @@ export function VehicleGeneralInfoForm({ form }: VehicleGeneralInfoFormProps) {
                   min={1900}
                   max={new Date().getFullYear() + 1}
                   className="transition-all duration-150"
+                  value={value?.toString() || ""}
+                  onChange={(e) =>
+                    onChange(
+                      e.target.value ? parseInt(e.target.value, 10) : undefined
+                    )
+                  }
                   {...field}
                 />
               </FormControl>

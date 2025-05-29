@@ -4,7 +4,11 @@ export const vehicleFormSchema = z.object({
   // Step 1: General Information
   brand: z.string().min(1, "La marca es requerida"),
   model: z.string().min(1, "El modelo es requerido"),
-  year: z.string().min(4, "El año es requerido"),
+  year: z
+    .number()
+    .int()
+    .min(1900, "El año debe ser válido")
+    .max(new Date().getFullYear() + 1, "El año no puede ser futuro"),
   trim: z.string().optional(),
   vehicleType: z.string().min(1, "El tipo de vehículo es requerido"),
   color: z.string().min(1, "El color es requerido"),
@@ -32,7 +36,19 @@ export const vehicleFormSchema = z.object({
   offerPrice: z.string().optional(),
   adminStatus: z.string().optional(),
   inMaintenance: z.boolean().default(false),
-  entryDate: z.date().optional(),
+  entryDate: z.string().datetime({
+    offset: true,
+    message: "La fecha de ingreso es requerida",
+  }),
+  // .transform((date) => {
+  //   console.log("Transforming date:", date);
+  //   // Convert date to ISO string if it's a Date object
+  //   if (date instanceof Date) {
+  //     return date.toISOString();
+  //   }
+  //   // Otherwise, return the date as is (it should already be a string)
+  //   return date;
+  // }),
 
   // Step 4: Associations (Optional)
   clientId: z.string().optional(),

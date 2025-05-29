@@ -27,9 +27,16 @@ const fetchUser = createServerFn({ method: "GET" }).handler(async () => {
     return null;
   }
 
+  // Safely access username with fallbacks
+  const username =
+    data.user.user_metadata?.username ||
+    data.user.user_metadata?.name ||
+    data.user.email?.split("@")[0] ||
+    "Usuario";
+
   return {
     email: data.user.email,
-    username: data.user.user_metadata.username,
+    username: username,
   };
 });
 

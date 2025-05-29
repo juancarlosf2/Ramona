@@ -29,6 +29,7 @@ export function AuthProvider({
   children: ReactNode;
   user: {
     email: string;
+    username: string;
   } | null;
 }) {
   const router = useRouter();
@@ -98,7 +99,9 @@ export function AuthProvider({
       ) : (
         // App pages have the sidebar when authenticated
         <div className="flex h-screen">
-          {isAuthenticated && <Sidebar user={user as { email: string }} />}
+          {isAuthenticated && user && user.email && (
+            <Sidebar user={user as { email: string; username: string }} />
+          )}
           <main className="flex-1 overflow-auto p-6 bg-background">
             {children}
           </main>

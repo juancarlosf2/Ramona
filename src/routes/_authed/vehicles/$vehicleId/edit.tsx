@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { z } from "zod";
 import { Wizard, type WizardStep } from "~/components/ui/wizard";
 import { VehicleGeneralInfoForm } from "~/components/vehicles/vehicle-general-info-form";
 import { VehicleTechnicalSpecsForm } from "~/components/vehicles/vehicle-technical-specs-form";
@@ -12,56 +12,18 @@ import { VehicleAssociationsForm } from "~/components/vehicles/vehicle-associati
 import { useToast } from "~/hooks/use-toast";
 import { Car, Wrench, DollarSign, Users } from "lucide-react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-
-// Define the form schema with Zod
-const vehicleFormSchema = z.object({
-  // Step 1: General Information
-  brand: z.string().min(1, "La marca es requerida"),
-  model: z.string().min(1, "El modelo es requerido"),
-  year: z.string().min(4, "El año es requerido"),
-  trim: z.string().optional(),
-  vehicleType: z.string().min(1, "El tipo de vehículo es requerido"),
-  color: z.string().min(1, "El color es requerido"),
-  status: z.string().min(1, "El estado es requerido"),
-  condition: z.string().min(1, "La condición es requerida"),
-  images: z.array(z.string()).optional(),
-  description: z.string().optional(),
-
-  // Step 2: Technical Specifications
-  transmission: z.string().min(1, "La transmisión es requerida"),
-  fuelType: z.string().min(1, "El tipo de combustible es requerido"),
-  engineSize: z.string().min(1, "El tamaño del motor es requerido"),
-  plate: z.string().optional(),
-  vin: z
-    .string()
-    .min(17, "El VIN debe tener 17 caracteres")
-    .max(17, "El VIN debe tener 17 caracteres"),
-  mileage: z.number().optional(),
-  doors: z.number().min(1, "El número de puertas es requerido"),
-  seats: z.number().min(1, "El número de asientos es requerido"),
-
-  // Step 3: Financial and Administrative
-  price: z.string().min(1, "El precio es requerido"),
-  hasOffer: z.boolean().default(false),
-  offerPrice: z.string().optional(),
-  adminStatus: z.string().optional(),
-  inMaintenance: z.boolean().default(false),
-  entryDate: z.date().optional(),
-
-  // Step 4: Associations (Optional)
-  clientId: z.string().optional(),
-  clientName: z.string().optional(),
-  contractId: z.string().optional(),
-});
-
-export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
+import {
+  vehicleFormSchema,
+  type VehicleFormValues,
+} from "~/components/vehicles/new-vehicle-schema";
+import { parseCurrency } from "~/lib/utils";
 
 // Sample vehicle data for editing
 const vehicleData = {
   id: "1",
   brand: "Toyota",
   model: "Corolla",
-  year: "2022",
+  year: 2022,
   trim: "XSE CVT",
   vehicleType: "Sedán",
   color: "Blanco",
@@ -105,11 +67,11 @@ export default function EditVehiclePage() {
 
   // Define form with react-hook-form
   const form = useForm<VehicleFormValues>({
-    resolver: zodResolver(vehicleFormSchema),
+    resolver: zodResolver(vehicleFormSchema as any), // Temporary fix for Zod v4 type compatibility
     defaultValues: {
       brand: "",
       model: "",
-      year: new Date().getFullYear().toString(),
+      year: new Date().getFullYear(),
       trim: "",
       vehicleType: "",
       color: "",
@@ -132,7 +94,7 @@ export default function EditVehiclePage() {
       offerPrice: "",
       adminStatus: "",
       inMaintenance: false,
-      entryDate: new Date(),
+      entryDate: new Date().toISOString(),
 
       clientId: "",
       clientName: "",
@@ -146,7 +108,8 @@ export default function EditVehiclePage() {
     // Simulate API call to fetch vehicle data
     const timer = setTimeout(() => {
       // In a real app, you would fetch the vehicle data based on the ID
-      form.reset(vehicleData);
+      const { id: vehicleId, ...formData } = vehicleData;
+      form.reset(formData);
       setIsLoading(false);
     }, 800);
 
@@ -155,7 +118,15 @@ export default function EditVehiclePage() {
 
   // Handle form submission
   const onSubmit = (data: VehicleFormValues) => {
-    console.log("Form submitted:", data);
+    // Transform data to match API expectations (same as register form)
+    const submitData = {
+      ...data,
+      price: parseCurrency(data.price),
+      offerPrice: data.offerPrice ? parseCurrency(data.offerPrice) : null,
+      entryDate: data.entryDate ? data.entryDate.toISOString() : null,
+    };
+
+    console.log("Form submitted:", submitData);
 
     // Show success toast
     toast({
@@ -180,7 +151,7 @@ export default function EditVehiclePage() {
       label: "Información General",
       description: "Datos básicos del vehículo",
       icon: <Car className="h-4 w-4" />,
-      component: <VehicleGeneralInfoForm form={form} />,
+      component: <VehicleGeneralInfoForm form={form as any} />,
       validate: async () => {
         const result = await form.trigger(
           [
@@ -204,7 +175,7 @@ export default function EditVehiclePage() {
       label: "Especificaciones Técnicas",
       description: "Detalles técnicos del vehículo",
       icon: <Wrench className="h-4 w-4" />,
-      component: <VehicleTechnicalSpecsForm form={form} />,
+      component: <VehicleTechnicalSpecsForm form={form as any} />,
       validate: async () => {
         const result = await form.trigger(
           ["transmission", "fuelType", "engineSize", "vin", "doors", "seats"],
@@ -220,9 +191,11 @@ export default function EditVehiclePage() {
       label: "Datos Financieros",
       description: "Información financiera y administrativa",
       icon: <DollarSign className="h-4 w-4" />,
-      component: <VehicleFinancialForm form={form} />,
+      component: <VehicleFinancialForm form={form as any} />,
       validate: async () => {
-        const result = await form.trigger(["price"], { shouldFocus: true });
+        const result = await form.trigger(["price", "entryDate"], {
+          shouldFocus: true,
+        });
         return result;
       },
     },
@@ -234,7 +207,7 @@ export default function EditVehiclePage() {
       optional: true,
       component: (
         <VehicleAssociationsForm
-          form={form}
+          form={form as any}
           onAddAnother={() => {}}
           addAnother={false}
         />
@@ -259,7 +232,7 @@ export default function EditVehiclePage() {
 
       <Wizard
         steps={steps}
-        onComplete={form.handleSubmit(onSubmit)}
+        onComplete={(form as any).handleSubmit(onSubmit)}
         cancelHref={`/vehicles/${id}`}
         completeText="Guardar Cambios"
         nextText="Continuar"

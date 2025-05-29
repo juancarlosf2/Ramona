@@ -3,7 +3,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -31,16 +31,23 @@ import {
   FileText,
   AlertCircle,
   CreditCard,
+  Loader2,
 } from "lucide-react";
 import { formatCurrency } from "~/lib/utils";
 import { Wizard, type WizardStep } from "~/components/ui/wizard";
 import { ContractStatusSelector } from "~/components/contracts/contract-status-selector";
 import { ContractStatusBadge } from "~/components/contracts/contract-status-badge";
 import { useToast } from "~/hooks/use-toast";
+import {
+  useClients,
+  useAvailableVehicles,
+  useCreateContract,
+  getErrorMessage,
+} from "~/hooks/useSupabaseData";
 
 // Define the form schema with Zod
 const contractFormSchema = z.object({
-  status: z.enum(["active", "pending", "completed"]).default("pending"),
+  status: z.enum(["active", "pending", "completed"]),
   clientId: z.string().min(1, "Debe seleccionar un cliente"),
   vehicleId: z.string().min(1, "Debe seleccionar un vehículo"),
   price: z.string().min(1, "El precio es requerido"),
@@ -54,16 +61,46 @@ const contractFormSchema = z.object({
 
 type ContractFormValues = z.infer<typeof contractFormSchema>;
 
-// Sample client data
+// Sample client data (remove once connected to server)
 const clients = [
-  { id: "1", name: "Juan Pérez", cedula: "001-1234567-8" },
-  { id: "2", name: "María Rodríguez", cedula: "002-9876543-2" },
-  { id: "3", name: "Carlos Gómez", cedula: "003-4567890-1" },
-  { id: "4", name: "Laura Sánchez", cedula: "004-3210987-6" },
-  { id: "5", name: "Roberto Méndez", cedula: "005-6789012-3" },
+  {
+    id: "1",
+    name: "Juan Pérez",
+    cedula: "001-1234567-8",
+    email: "juan.perez@example.com",
+    dealerId: "dealer1",
+  },
+  {
+    id: "2",
+    name: "María Rodríguez",
+    cedula: "002-9876543-2",
+    email: "maria.rodriguez@example.com",
+    dealerId: "dealer1",
+  },
+  {
+    id: "3",
+    name: "Carlos Gómez",
+    cedula: "003-4567890-1",
+    email: "carlos.gomez@example.com",
+    dealerId: "dealer1",
+  },
+  {
+    id: "4",
+    name: "Laura Sánchez",
+    cedula: "004-3210987-6",
+    email: "laura.sanchez@example.com",
+    dealerId: "dealer1",
+  },
+  {
+    id: "5",
+    name: "Roberto Méndez",
+    cedula: "005-6789012-3",
+    email: "roberto.mendez@example.com",
+    dealerId: "dealer1",
+  },
 ];
 
-// Sample vehicle data
+// Sample vehicle data (remove once connected to server)
 const vehicles = [
   {
     id: "1",
@@ -111,6 +148,22 @@ export default function NewContractPage() {
   const searchParams = Route.useSearch();
   const router = useRouter();
   const { toast } = useToast();
+
+  // Fetch data from server
+  const {
+    data: serverClients = [],
+    isLoading: isLoadingClients,
+    error: clientsError,
+  } = useClients();
+
+  const {
+    data: availableVehicles = [],
+    isLoading: isLoadingVehicles,
+    error: vehiclesError,
+  } = useAvailableVehicles();
+
+  // Mutation for creating contract
+  const createContractMutation = useCreateContract();
 
   // Get date from URL if available
   const dateFromUrl = searchParams.date;
@@ -166,28 +219,24 @@ export default function NewContractPage() {
         form.setValue("monthlyPayment", formatCurrency(monthly));
       }
     }
-  }, [price, downPayment, months, financingType, form]);
+  }, [price, downPayment, months, financingType]);
 
   // Update selected client when clientId changes
   useEffect(() => {
     if (clientId) {
-      const client = clients.find((c) => c.id === clientId);
+      // First try to find in server data
+      let client = serverClients.find((c) => c.id === clientId);
+
+      // Fallback to sample data if server data not available
+      if (!client) {
+        client = clients.find((c) => c.id === clientId);
+      }
+
       if (client) {
         setSelectedClient(client);
       }
     }
-  }, [clientId]);
-
-  // Update selected vehicle when vehicleId changes
-  useEffect(() => {
-    if (vehicleId) {
-      const vehicle = vehicles.find((v) => v.id === vehicleId);
-      if (vehicle) {
-        setSelectedVehicle(vehicle);
-        form.setValue("price", formatCurrency(vehicle.price));
-      }
-    }
-  }, [vehicleId, form]);
+  }, [clientId, serverClients]);
 
   // Format currency as user types
   const formatCurrencyInput = (value: string) => {
@@ -207,20 +256,40 @@ export default function NewContractPage() {
   };
 
   // Handle form submission
-  const onSubmit = (data: ContractFormValues) => {
-    console.log("Form submitted:", data);
+  const onSubmit = async (data: ContractFormValues) => {
+    try {
+      await createContractMutation.mutateAsync({
+        clientId: data.clientId,
+        vehicleId: data.vehicleId,
+        price: Number.parseFloat(data.price.replace(/[^\d.]/g, "")),
+        financingType: data.financingType,
+        downPayment: data.downPayment
+          ? Number.parseFloat(data.downPayment.replace(/[^\d.]/g, ""))
+          : null,
+        months: data.months ? Number.parseInt(data.months) : null,
+        monthlyPayment: data.monthlyPayment
+          ? Number.parseFloat(data.monthlyPayment.replace(/[^\d.]/g, ""))
+          : null,
+        notes: data.notes || undefined,
+        status: data.status,
+      });
 
-    // Show success toast
-    toast({
-      title: "✅ Contrato creado exitosamente",
-      description: "El contrato ha sido generado con éxito.",
-      variant: "success",
-    });
+      toast({
+        title: "✅ Contrato creado exitosamente",
+        description: "El contrato ha sido generado con éxito.",
+      });
 
-    // Navigate back to calendar or contracts list
-    setTimeout(() => {
-      router.navigate({ to: "/calendar" });
-    }, 1500);
+      // Navigate back to calendar or contracts list
+      setTimeout(() => {
+        router.navigate({ to: "/calendar" });
+      }, 1500);
+    } catch (error) {
+      toast({
+        title: "Error al crear contrato",
+        description: getErrorMessage(error),
+        variant: "destructive",
+      });
+    }
   };
 
   // Define wizard steps
@@ -264,21 +333,40 @@ export default function NewContractPage() {
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
+                  disabled={isLoadingClients}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleccionar cliente" />
+                      <SelectValue
+                        placeholder={
+                          isLoadingClients
+                            ? "Cargando clientes..."
+                            : "Seleccionar cliente"
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name} - {client.cedula}
-                      </SelectItem>
-                    ))}
+                    {clientsError && (
+                      <div className="p-2 text-sm text-destructive">
+                        Error cargando clientes. Usando datos de ejemplo.
+                      </div>
+                    )}
+                    {(serverClients.length > 0 ? serverClients : clients).map(
+                      (client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name} - {client.cedula}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />
+                {clientsError && (
+                  <FormDescription className="text-destructive">
+                    {getErrorMessage(clientsError)}
+                  </FormDescription>
+                )}
               </FormItem>
             )}
           />
@@ -311,16 +399,49 @@ export default function NewContractPage() {
                   Vehículo<span className="text-destructive ml-1">*</span>
                 </FormLabel>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+
+                    // Only find vehicle from available vehicles - no fallback
+                    const vehicle = availableVehicles.find(
+                      (v) => v.id === value
+                    );
+
+                    if (vehicle) {
+                      setSelectedVehicle(vehicle);
+                      form.setValue("price", vehicle.price.toString());
+                    }
+                  }}
                   defaultValue={field.value}
+                  disabled={isLoadingVehicles || availableVehicles.length === 0}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleccionar vehículo" />
+                      <SelectValue
+                        placeholder={
+                          isLoadingVehicles
+                            ? "Cargando vehículos..."
+                            : availableVehicles.length === 0
+                              ? "No hay vehículos disponibles"
+                              : "Seleccionar vehículo"
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {vehicles.map((vehicle) => (
+                    {vehiclesError && (
+                      <div className="p-2 text-sm text-destructive">
+                        Error: {getErrorMessage(vehiclesError)}
+                      </div>
+                    )}
+                    {availableVehicles.length === 0 &&
+                      !isLoadingVehicles &&
+                      !vehiclesError && (
+                        <div className="p-2 text-sm text-muted-foreground">
+                          No hay vehículos disponibles para crear contratos
+                        </div>
+                      )}
+                    {availableVehicles.map((vehicle) => (
                       <SelectItem key={vehicle.id} value={vehicle.id}>
                         {vehicle.brand} {vehicle.model} {vehicle.year} -{" "}
                         {vehicle.color}
@@ -329,6 +450,28 @@ export default function NewContractPage() {
                   </SelectContent>
                 </Select>
                 <FormMessage />
+                {availableVehicles.length === 0 &&
+                  !isLoadingVehicles &&
+                  !vehiclesError && (
+                    <FormDescription className="flex items-center gap-2 text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      No hay vehículos disponibles.{" "}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.navigate({ to: "/vehicles/register" })
+                        }
+                        className="text-primary underline hover:no-underline"
+                      >
+                        Registrar un nuevo vehículo
+                      </button>
+                    </FormDescription>
+                  )}
+                {vehiclesError && (
+                  <FormDescription className="text-destructive">
+                    {getErrorMessage(vehiclesError)}
+                  </FormDescription>
+                )}
               </FormItem>
             )}
           />
@@ -376,6 +519,17 @@ export default function NewContractPage() {
         </div>
       ),
       validate: async () => {
+        // Check if there are available vehicles first
+        if (availableVehicles.length === 0) {
+          toast({
+            title: "No hay vehículos disponibles",
+            description:
+              "Debe registrar al menos un vehículo disponible para crear un contrato.",
+            variant: "destructive",
+          });
+          return false;
+        }
+
         const result = await form.trigger(["status", "clientId", "vehicleId"]);
         return result;
       },
@@ -713,7 +867,11 @@ export default function NewContractPage() {
             description="Crea un nuevo contrato de venta para un cliente y vehículo"
             onComplete={form.handleSubmit(onSubmit)}
             cancelHref="/calendar"
-            completeText="Generar Contrato"
+            completeText={
+              createContractMutation.isPending
+                ? "Generando Contrato..."
+                : "Generar Contrato"
+            }
             autoSave={true}
           />
         </form>

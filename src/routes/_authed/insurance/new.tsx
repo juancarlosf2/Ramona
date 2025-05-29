@@ -289,26 +289,26 @@ const formSchema = z.object({
   clientEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   contractId: z.string().optional(),
   startDate: z.date({
-    required_error: "Selecciona una fecha de inicio",
+    message: "Selecciona una fecha de inicio",
     invalid_type_error: "Fecha inválida",
   }),
   expiryDate: z.date({
-    required_error: "Selecciona una fecha de vencimiento",
+    message: "Selecciona una fecha de vencimiento",
     invalid_type_error: "Fecha inválida",
   }),
   coverageType: z.enum(["motor_transmission", "full", "basic"], {
-    required_error: "Selecciona un tipo de cobertura",
+    message: "Selecciona un tipo de cobertura",
   }),
   coverageDuration: z.string({
-    required_error: "Selecciona la duración de la cobertura",
+    message: "Selecciona la duración de la cobertura",
   }),
   premium: z
     .number({
-      required_error: "Ingresa el monto de la prima",
+      message: "Ingresa el monto de la prima",
     })
     .min(1, "El monto debe ser mayor a 0"),
   status: z.enum(["active", "expiring_soon", "expired", "cancelled"], {
-    required_error: "Selecciona un estado",
+    message: "Selecciona un estado",
   }),
 });
 

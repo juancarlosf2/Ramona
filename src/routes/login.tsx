@@ -32,7 +32,7 @@ import { useToast } from "~/hooks/use-toast";
 // React Hook Form imports
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { z } from "zod";
 
 export const Route = createFileRoute("/login")({
   component: AuthPage,

@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { db } from "~/db";
+import { dealers, profiles } from "~/db/schema";
 import { getSupabaseServerClient } from "~/utils/supabase";
 
 export const signupSchema = z.object({
@@ -37,10 +39,6 @@ export const signupFn = createServerFn({ method: "POST" })
       // You might need to inspect the `error` object further or refer to Supabase documentation
       // for specific error codes or more reliable ways to distinguish error types.
       switch (true) {
-        case error.message.includes("User already registered"):
-          message =
-            "Este correo electrónico ya está registrado. Por favor, inicia sesión o utiliza un correo diferente.";
-          break;
         case error.message.includes("Email rate limit exceeded"):
           message =
             "Se han enviado demasiadas solicitudes de registro para este correo. Por favor, inténtalo de nuevo más tarde.";
@@ -61,6 +59,28 @@ export const signupFn = createServerFn({ method: "POST" })
         error: true,
         message, // Use the potentially more specific message
       };
+    }
+
+    if (userData?.user?.id) {
+      const user = await db.query.authUsers.findFirst({
+        where: (authUsers, { eq }) => eq(authUsers.id, userData.user!.id),
+      });
+
+      if (user) {
+        const [dealer] = await db
+          .insert(dealers)
+          .values({
+            businessName: "",
+          })
+          .returning();
+
+        await db.insert(profiles).values({
+          id: user.id,
+          email: data.email,
+          dealerId: dealer.id,
+          role: "admin",
+        });
+      }
     }
 
     return {

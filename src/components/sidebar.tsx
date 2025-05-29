@@ -11,14 +11,13 @@ import {
 import { cn, generateAvatarColor, getInitials } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { Button, buttonVariants } from "~/components/ui/button";
-import { useAuth } from "~/components/auth-provider";
+import { buttonVariants } from "~/components/ui/button";
 import { Link, useRouter } from "@tanstack/react-router";
 
 export default function Sidebar({
   user: userData,
 }: {
-  user: { email: string; username: string };
+  user: { email: string; username: string } | null;
 }) {
   const router = useRouter();
 
@@ -28,8 +27,8 @@ export default function Sidebar({
 
   // Mock user data - in a real app, this would come from authentication context
   const user = {
-    name: userData.username,
-    email: userData.email,
+    name: userData?.username || "User",
+    email: userData?.email || "",
     role: "Administrador",
   };
 
@@ -87,6 +86,11 @@ export default function Sidebar({
           label: "Seguros",
           icon: Shield,
           href: "/insurance",
+        },
+        {
+          label: "Concesionarios",
+          icon: Users,
+          href: "/consignments",
         },
       ],
     },
