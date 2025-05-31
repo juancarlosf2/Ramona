@@ -58,47 +58,53 @@ export function VehicleFinancialForm({ form }: VehicleFinancialFormProps) {
       <FormField
         control={form.control}
         name="entryDate"
-        render={({ field }) => (
-          <FormItem className="flex flex-col">
-            <FormLabel>
-              Fecha de ingreso
-              <span className="text-destructive ml-1">*</span>
-            </FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full pl-3 text-left font-normal transition-all duration-150",
-                      !field.value && "text-muted-foreground"
-                    )}
-                    type="button"
-                  >
-                    {field.value ? (
-                      format(field.value, "PPP", { locale: es })
-                    ) : (
-                      <span>Selecciona una fecha</span>
-                    )}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={field.value}
-                  onSelect={field.onChange}
-                  disabled={(date) =>
-                    date > new Date() || date < new Date("1900-01-01")
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          // Convert field value from ISO string to Date for the calendar
+          const selectedDate = field.value ? new Date(field.value) : undefined;
+
+          return (
+            <FormItem className="flex flex-col">
+              <FormLabel>
+                Fecha de ingreso
+                <span className="text-destructive ml-1">*</span>
+              </FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[240px] justify-start text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? (
+                        format(new Date(field.value), "PPP", { locale: es })
+                      ) : (
+                        <span>Selecciona una fecha</span>
+                      )}
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      // Convert Date back to ISO string for the form
+                      field.onChange(date ? date.toISOString() : "");
+                    }}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
 
       <FormField

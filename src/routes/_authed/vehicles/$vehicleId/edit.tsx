@@ -1,9 +1,6 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Wizard, type WizardStep } from "~/components/ui/wizard";
 import { VehicleGeneralInfoForm } from "~/components/vehicles/vehicle-general-info-form";
 import { VehicleTechnicalSpecsForm } from "~/components/vehicles/vehicle-technical-specs-form";
@@ -46,7 +43,7 @@ const vehicleData = {
   offerPrice: "899000",
   adminStatus: "",
   inMaintenance: false,
-  entryDate: new Date("2023-10-15"),
+  entryDate: new Date("2023-10-15").toISOString(),
 
   clientId: "",
   clientName: "",
@@ -67,7 +64,7 @@ export default function EditVehiclePage() {
 
   // Define form with react-hook-form
   const form = useForm<VehicleFormValues>({
-    resolver: zodResolver(vehicleFormSchema as any), // Temporary fix for Zod v4 type compatibility
+    resolver: standardSchemaResolver(vehicleFormSchema),
     defaultValues: {
       brand: "",
       model: "",
@@ -123,7 +120,7 @@ export default function EditVehiclePage() {
       ...data,
       price: parseCurrency(data.price),
       offerPrice: data.offerPrice ? parseCurrency(data.offerPrice) : null,
-      entryDate: data.entryDate ? data.entryDate.toISOString() : null,
+      entryDate: data.entryDate || null,
     };
 
     console.log("Form submitted:", submitData);

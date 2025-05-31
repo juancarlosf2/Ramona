@@ -53,10 +53,13 @@ export function parseCurrency(
 ): number | null {
   if (value === null || value === undefined || value === "") return null;
   if (typeof value === "number") return value;
-  // Remove non-digit characters and parse as number
+
+  // Remove currency symbols, spaces, and non-digit characters except commas and dots
+  // Handle formatted currency strings like "RD$ 2,000,000"
   const cleanedValue = String(value)
-    .replace(/[^\d.,]/g, "")
-    .replace(",", ".");
+    .replace(/[^\d.,]/g, "") // Remove everything except digits, commas, and dots
+    .replace(/,/g, ""); // Remove commas (thousands separators)
+
   const numericValue = parseFloat(cleanedValue);
   return isNaN(numericValue) ? null : numericValue;
 }

@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { Form } from "~/components/ui/form";
 import { Wizard, type WizardStep } from "~/components/ui/wizard";
 import { VehicleGeneralInfoForm } from "~/components/vehicles/vehicle-general-info-form";
@@ -31,7 +31,7 @@ function RegisterVehiclePage() {
 
   // Define form with react-hook-form
   const form = useForm<VehicleFormValues>({
-    resolver: zodResolver(vehicleFormSchema), // Temporary fix for Zod v4 type compatibility
+    resolver: standardSchemaResolver(vehicleFormSchema),
     defaultValues: {
       brand: "",
       model: "",
