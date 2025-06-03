@@ -11,48 +11,15 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { formatCurrency } from "~/lib/utils";
+import { vehicleStatusMap } from "~/lib/vehicle-status-config";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Link } from "@tanstack/react-router";
+import type { Vehicle, VehicleStatus } from "~/types/vehicle";
 
-// Vehicle type
-type Vehicle = {
-  id: string;
-  brand: string;
-  model: string;
-  year: number;
-  color: string;
-  vin: string;
-  plate: string;
-  price: number;
-  status: "available" | "sold" | "reserved" | "maintenance" | "importing";
+// Extended vehicle type for table with simplified status type
+type TableVehicle = Omit<Vehicle, "status"> & {
+  status: VehicleStatus;
   addedDate?: string;
-};
-
-// Status mapping for vehicles
-const vehicleStatusMap: Record<
-  Vehicle["status"],
-  { label: string; className: string }
-> = {
-  available: {
-    label: "Disponible",
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  },
-  sold: {
-    label: "Vendido",
-    className: "bg-blue-100 text-blue-800 border-blue-200",
-  },
-  reserved: {
-    label: "Reservado",
-    className: "bg-amber-100 text-amber-800 border-amber-200",
-  },
-  maintenance: {
-    label: "En Mantenimiento",
-    className: "bg-red-100 text-red-800 border-red-200",
-  },
-  importing: {
-    label: "Importando",
-    className: "bg-purple-100 text-purple-800 border-purple-200",
-  },
 };
 
 // Brand color mapping
@@ -70,7 +37,7 @@ const brandColorMap: Record<string, string> = {
 };
 
 // Sample data
-const data: Vehicle[] = [
+const data: TableVehicle[] = [
   {
     id: "1",
     brand: "Toyota",
@@ -79,7 +46,7 @@ const data: Vehicle[] = [
     color: "Blanco",
     vin: "1HGCM82633A123456",
     plate: "A123456",
-    price: 950000,
+    price: "950000",
     status: "available",
     addedDate: "2023-10-15",
   },
@@ -91,7 +58,7 @@ const data: Vehicle[] = [
     color: "Negro",
     vin: "2HGFG12567H789012",
     plate: "B789012",
-    price: 875000,
+    price: "875000",
     status: "sold",
     addedDate: "2023-09-28",
   },
@@ -103,7 +70,7 @@ const data: Vehicle[] = [
     color: "Gris",
     vin: "5NPE24AF1FH123789",
     plate: "C345678",
-    price: 1250000,
+    price: "1250000",
     status: "available",
     addedDate: "2023-11-05",
   },
@@ -115,7 +82,7 @@ const data: Vehicle[] = [
     color: "Rojo",
     vin: "KNDPB3AC8F7123456",
     plate: "D901234",
-    price: 1050000,
+    price: "1050000",
     status: "reserved",
     addedDate: "2023-10-22",
   },
@@ -127,7 +94,7 @@ const data: Vehicle[] = [
     color: "Azul",
     vin: "3N1AB7AP3FY123456",
     plate: "E567890",
-    price: 925000,
+    price: "925000",
     status: "maintenance",
     addedDate: "2023-11-10",
   },
@@ -139,7 +106,7 @@ const data: Vehicle[] = [
     color: "Plata",
     vin: "JTMWFREV0JD123456",
     plate: "F123456",
-    price: 1350000,
+    price: "1350000",
     status: "available",
     addedDate: "2023-10-05",
   },
@@ -151,7 +118,7 @@ const data: Vehicle[] = [
     color: "Rojo",
     vin: "JM3KFBDM7N0123456",
     plate: "G789012",
-    price: 1150000,
+    price: "1150000",
     status: "reserved",
     addedDate: "2023-11-02",
   },
@@ -163,7 +130,7 @@ const data: Vehicle[] = [
     color: "Blanco",
     vin: "3CZRU5H53PM123456",
     plate: "H345678",
-    price: 980000,
+    price: "980000",
     status: "available",
     addedDate: "2023-10-18",
   },
@@ -175,7 +142,7 @@ const data: Vehicle[] = [
     color: "Negro",
     vin: "KNDEU2A29P7123456",
     plate: "I901234",
-    price: 890000,
+    price: "890000",
     status: "available",
     addedDate: "2023-10-30",
   },
@@ -187,14 +154,14 @@ const data: Vehicle[] = [
     color: "Azul",
     vin: "3N1CP5CU7NL123456",
     plate: "J567890",
-    price: 850000,
-    status: "importing",
+    price: "850000",
+    status: "maintenance",
     addedDate: "2023-11-08",
   },
 ];
 
 export function VehiclesTable() {
-  const columns: ColumnDef<Vehicle>[] = [
+  const columns: ColumnDef<TableVehicle>[] = [
     {
       accessorKey: "brand",
       header: "Vehículo",

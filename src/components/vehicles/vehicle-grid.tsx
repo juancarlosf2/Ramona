@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Calendar,
   Car,
@@ -44,6 +44,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { cn, formatCurrency } from "~/lib/utils";
+import { vehicleStatusMap } from "~/lib/vehicle-status-config";
 import {
   Dialog,
   DialogContent,
@@ -54,180 +55,16 @@ import {
 } from "~/components/ui/dialog";
 import { toast } from "~/hooks/use-toast";
 import { Link, useRouter } from "@tanstack/react-router";
+import { useVehicles } from "~/hooks/useSupabaseData";
 import diverseAvatars from "../../public/diverse-avatars.png";
+import {
+  translateTransmission,
+  translateFuelType,
+  translateCondition,
+} from "~/lib/vehicle-translations";
+import type { Vehicle, VehicleStatus } from "~/types/vehicle";
 
-// Vehicle type definition
-type Vehicle = {
-  id: string;
-  brand: string;
-  model: string;
-  year: number;
-  trim?: string;
-  color: string;
-  vin: string;
-  plate: string;
-  price: number;
-  status: VehicleStatus;
-  mileage?: number;
-  fuelType: string;
-  transmission: string;
-  engineSize: string;
-  doors: number;
-  seats: number;
-  images: string[];
-  addedDate?: string;
-  onSale?: boolean;
-  salePrice?: number;
-  assignedTo?: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-};
-
-// Vehicle status types
-type VehicleStatus =
-  | "available"
-  | "reserved"
-  | "in_process"
-  | "financing"
-  | "sold"
-  | "unavailable"
-  | "retired"
-  | "preparing"
-  | "pending_delivery"
-  | "test_drive"
-  | "maintenance"
-  | "administrative"
-  | "with_offer"
-  | "with_contract"
-  | "pending_payment"
-  | "completed";
-
-// Update the vehicleStatusMap object with the standardized color scheme and icons
-const vehicleStatusMap: Record<
-  VehicleStatus,
-  {
-    label: string;
-    className: string;
-    bgClassName: string;
-    icon: React.ReactNode;
-    description: string;
-  }
-> = {
-  available: {
-    label: "Disponible",
-    className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    bgClassName: "bg-yellow-50",
-    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-    description: "Vehículo listo para venta inmediata",
-  },
-  reserved: {
-    label: "Reservado",
-    className: "bg-blue-100 text-blue-800 border-blue-200",
-    bgClassName: "bg-blue-50",
-    icon: <Clock className="h-3.5 w-3.5" />,
-    description: "Vehículo apartado por un cliente",
-  },
-  in_process: {
-    label: "En proceso de venta",
-    className: "bg-orange-100 text-orange-800 border-orange-200",
-    bgClassName: "bg-orange-50",
-    icon: <Hourglass className="h-3.5 w-3.5" />,
-    description: "Venta en proceso de finalización",
-  },
-  financing: {
-    label: "En financiamiento",
-    className: "bg-purple-100 text-purple-800 border-purple-200",
-    bgClassName: "bg-purple-50",
-    icon: <Banknote className="h-3.5 w-3.5" />,
-    description: "En proceso de aprobación de financiamiento",
-  },
-  sold: {
-    label: "Vendido",
-    className: "bg-green-100 text-green-800 border-green-200",
-    bgClassName: "bg-green-50",
-    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-    description: "Venta completada",
-  },
-  unavailable: {
-    label: "No disponible",
-    className: "bg-red-100 text-red-800 border-red-200",
-    bgClassName: "bg-red-50",
-    icon: <AlertCircle className="h-3.5 w-3.5" />,
-    description: "Temporalmente no disponible para venta",
-  },
-  retired: {
-    label: "Retirado",
-    className: "bg-gray-800 text-gray-100 border-gray-700",
-    bgClassName: "bg-gray-50",
-    icon: <X className="h-3.5 w-3.5" />,
-    description: "Retirado permanentemente del inventario",
-  },
-  preparing: {
-    label: "En preparación",
-    className: "bg-amber-100 text-amber-800 border-amber-200",
-    bgClassName: "bg-amber-50",
-    icon: <Wrench className="h-3.5 w-3.5" />,
-    description: "En proceso de preparación para venta",
-  },
-  pending_delivery: {
-    label: "Entrega pendiente",
-    className: "bg-sky-100 text-sky-800 border-sky-200",
-    bgClassName: "bg-sky-50",
-    icon: <Truck className="h-3.5 w-3.5" />,
-    description: "Vendido, pendiente de entrega al cliente",
-  },
-  test_drive: {
-    label: "Test drive",
-    className: "bg-teal-100 text-teal-800 border-teal-200",
-    bgClassName: "bg-teal-50",
-    icon: <Car className="h-3.5 w-3.5" />,
-    description: "Reservado para prueba de manejo",
-  },
-  maintenance: {
-    label: "Mantenimiento",
-    className: "bg-rose-100 text-rose-800 border-rose-200",
-    bgClassName: "bg-rose-50",
-    icon: <Wrench className="h-3.5 w-3.5" />,
-    description: "En servicio de mantenimiento o reparación",
-  },
-  administrative: {
-    label: "Gestión admin.",
-    className: "bg-slate-100 text-slate-800 border-slate-200",
-    bgClassName: "bg-slate-50",
-    icon: <Briefcase className="h-3.5 w-3.5" />,
-    description: "En proceso de gestión administrativa",
-  },
-  with_offer: {
-    label: "Con oferta",
-    className: "bg-amber-100 text-amber-800 border-amber-200",
-    bgClassName: "bg-amber-50",
-    icon: <Tag className="h-3.5 w-3.5" />,
-    description: "Cliente ha realizado una oferta",
-  },
-  with_contract: {
-    label: "Con contrato",
-    className: "bg-indigo-100 text-indigo-800 border-indigo-200",
-    bgClassName: "bg-indigo-50",
-    icon: <FileText className="h-3.5 w-3.5" />,
-    description: "Contrato generado, pendiente de firma",
-  },
-  pending_payment: {
-    label: "Pago pendiente",
-    className: "bg-amber-100 text-amber-800 border-amber-200",
-    bgClassName: "bg-amber-50",
-    icon: <TimerReset className="h-3.5 w-3.5" />,
-    description: "Esperando confirmación de pago",
-  },
-  completed: {
-    label: "Finalizado",
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    bgClassName: "bg-emerald-50",
-    icon: <FileCheck className="h-3.5 w-3.5" />,
-    description: "Proceso completado satisfactoriamente",
-  },
-};
+// Vehicle status types are now imported from ~/types/vehicle
 
 // Brand color mapping for avatars
 const brandColorMap: Record<string, string> = {
@@ -252,253 +89,6 @@ const brandColorMap: Record<string, string> = {
   Peugeot: "bg-blue-100",
   Renault: "bg-yellow-100",
 };
-
-// Sample data
-const vehiclesData: Vehicle[] = [
-  {
-    id: "1",
-    brand: "Toyota",
-    model: "Corolla",
-    year: 2022,
-    trim: "XSE CVT",
-    color: "Blanco",
-    vin: "1HGCM82633A123456",
-    plate: "A123456",
-    price: 950000,
-    status: "available",
-    mileage: 1500,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "1.8L",
-    doors: 4,
-    seats: 5,
-    images: ["/placeholder.svg?key=c3c0u"],
-    addedDate: "2023-10-15",
-    onSale: true,
-    salePrice: 899000,
-  },
-  {
-    id: "2",
-    brand: "Honda",
-    model: "Civic",
-    year: 2021,
-    color: "Negro",
-    vin: "2HGFG12567H789012",
-    plate: "B789012",
-    price: 875000,
-    status: "sold",
-    mileage: 12000,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "2.0L",
-    doors: 4,
-    seats: 5,
-    images: ["/placeholder.svg?key=d8vlv"],
-    addedDate: "2023-09-28",
-  },
-  {
-    id: "3",
-    brand: "Hyundai",
-    model: "Tucson",
-    year: 2023,
-    color: "Gris",
-    vin: "5NPE24AF1FH123789",
-    plate: "C345678",
-    price: 1250000,
-    status: "reserved",
-    mileage: 500,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "2.0L",
-    doors: 5,
-    seats: 5,
-    images: ["/placeholder.svg?key=k2tfu"],
-    addedDate: "2023-11-05",
-    assignedTo: {
-      id: "a1",
-      name: "Carlos Méndez",
-      avatar: diverseAvatars,
-    },
-  },
-  {
-    id: "4",
-    brand: "Kia",
-    model: "Sportage",
-    year: 2022,
-    color: "Rojo",
-    vin: "KNDPB3AC8F7123456",
-    plate: "D901234",
-    price: 1050000,
-    status: "in_process",
-    mileage: 3500,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "2.0L",
-    doors: 5,
-    seats: 5,
-    images: ["/placeholder.svg?key=r891d"],
-    addedDate: "2023-10-22",
-  },
-  {
-    id: "5",
-    brand: "Nissan",
-    model: "Sentra",
-    year: 2023,
-    color: "Azul",
-    vin: "3N1AB7AP3FY123456",
-    plate: "E567890",
-    price: 925000,
-    status: "maintenance",
-    mileage: 1200,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "1.8L",
-    doors: 4,
-    seats: 5,
-    images: ["/placeholder.svg?key=m00c3"],
-    addedDate: "2023-11-10",
-  },
-  {
-    id: "6",
-    brand: "Toyota",
-    model: "RAV4",
-    year: 2023,
-    color: "Plata",
-    vin: "JTMWFREV0JD123456",
-    plate: "F123456",
-    price: 1350000,
-    status: "available",
-    mileage: 800,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "2.5L",
-    doors: 5,
-    seats: 5,
-    images: ["/placeholder.svg?key=3bpp8"],
-    addedDate: "2023-10-05",
-    onSale: true,
-    salePrice: 1299000,
-  },
-  {
-    id: "7",
-    brand: "Mazda",
-    model: "CX-5",
-    year: 2022,
-    color: "Rojo",
-    vin: "JM3KFBDM7N0123456",
-    plate: "G789012",
-    price: 1150000,
-    status: "test_drive",
-    mileage: 2500,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "2.5L",
-    doors: 5,
-    seats: 5,
-    images: ["/placeholder.svg?key=f4vt5"],
-    addedDate: "2023-11-02",
-    assignedTo: {
-      id: "a2",
-      name: "María Rodríguez",
-      avatar: diverseAvatars,
-    },
-  },
-  {
-    id: "8",
-    brand: "Honda",
-    model: "HR-V",
-    year: 2023,
-    color: "Blanco",
-    vin: "3CZRU5H53PM123456",
-    plate: "H345678",
-    price: 980000,
-    status: "with_offer",
-    mileage: 1000,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "1.8L",
-    doors: 5,
-    seats: 5,
-    images: ["/placeholder.svg?key=k1vin"],
-    addedDate: "2023-10-18",
-  },
-  {
-    id: "9",
-    brand: "Kia",
-    model: "Seltos",
-    year: 2023,
-    color: "Negro",
-    vin: "KNDEU2A29P7123456",
-    plate: "I901234",
-    price: 890000,
-    status: "financing",
-    mileage: 1800,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "2.0L",
-    doors: 5,
-    seats: 5,
-    images: ["/placeholder.svg?key=73t6k"],
-    addedDate: "2023-10-30",
-  },
-  {
-    id: "10",
-    brand: "Nissan",
-    model: "Kicks",
-    year: 2022,
-    color: "Azul",
-    vin: "3N1CP5CU7NL123456",
-    plate: "J567890",
-    price: 850000,
-    status: "pending_delivery",
-    mileage: 2200,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "1.6L",
-    doors: 5,
-    seats: 5,
-    images: ["/placeholder.svg?key=efq3c"],
-    addedDate: "2023-11-08",
-  },
-  {
-    id: "11",
-    brand: "Volkswagen",
-    model: "Golf",
-    year: 2022,
-    color: "Gris",
-    vin: "WVWZZZ1KZCP123456",
-    plate: "K123456",
-    price: 920000,
-    status: "with_contract",
-    mileage: 3000,
-    fuelType: "Gasolina",
-    transmission: "Manual",
-    engineSize: "1.4L",
-    doors: 5,
-    seats: 5,
-    images: ["/placeholder.svg?key=nluz3"],
-    addedDate: "2023-09-15",
-  },
-  {
-    id: "12",
-    brand: "Hyundai",
-    model: "Elantra",
-    year: 2023,
-    color: "Plata",
-    vin: "KMHD84LF8PU123456",
-    plate: "L789012",
-    price: 880000,
-    status: "pending_payment",
-    mileage: 1500,
-    fuelType: "Gasolina",
-    transmission: "Automática",
-    engineSize: "2.0L",
-    doors: 4,
-    seats: 5,
-    images: ["/placeholder.svg?key=sfz0t"],
-    addedDate: "2023-10-25",
-  },
-];
 
 // Filter type
 type Filters = {
@@ -525,9 +115,11 @@ const getUniqueValues = <T extends keyof Vehicle>(
 
 export function VehicleGrid() {
   const router = useRouter();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+
+  // React Query for vehicles data
+  const { data: vehicles = [], isLoading, error } = useVehicles();
+
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<number>(0);
 
@@ -557,24 +149,54 @@ export function VehicleGrid() {
     fuelTypes: [],
   });
 
-  // Get unique values for filter options
-  const uniqueBrands = getUniqueValues(vehiclesData, "brand");
-  const uniqueColors = getUniqueValues(vehiclesData, "color");
-  const uniqueTransmissions = getUniqueValues(vehiclesData, "transmission");
-  const uniqueFuelTypes = getUniqueValues(vehiclesData, "fuelType");
-  const minYearAvailable = Math.min(...vehiclesData.map((v) => v.year));
-  const maxYearAvailable = Math.max(...vehiclesData.map((v) => v.year));
-  const minPriceAvailable = Math.min(...vehiclesData.map((v) => v.price));
-  const maxPriceAvailable = Math.max(...vehiclesData.map((v) => v.price));
+  // Memoized derived values from server data
+  const uniqueBrands = useMemo(
+    () => getUniqueValues(vehicles, "brand"),
+    [vehicles]
+  );
+  const uniqueColors = useMemo(
+    () => getUniqueValues(vehicles, "color"),
+    [vehicles]
+  );
+  const uniqueTransmissions = useMemo(
+    () => getUniqueValues(vehicles, "transmission"),
+    [vehicles]
+  );
+  const uniqueFuelTypes = useMemo(
+    () => getUniqueValues(vehicles, "fuelType"),
+    [vehicles]
+  );
 
-  // Simulate loading data
+  const {
+    minYearAvailable,
+    maxYearAvailable,
+    minPriceAvailable,
+    maxPriceAvailable,
+  } = useMemo(() => {
+    if (vehicles.length === 0) {
+      return {
+        minYearAvailable: 2015,
+        maxYearAvailable: new Date().getFullYear() + 1,
+        minPriceAvailable: 0,
+        maxPriceAvailable: 2000000,
+      };
+    }
+
+    const years = vehicles.map((v) => v.year);
+    const prices = vehicles.map((v) => Number.parseFloat(v.price));
+
+    return {
+      minYearAvailable: Math.min(...years),
+      maxYearAvailable: Math.max(...years),
+      minPriceAvailable: Math.min(...prices),
+      maxPriceAvailable: Math.max(...prices),
+    };
+  }, [vehicles]);
+
+  // Initialize filters when vehicles data is loaded
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVehicles(vehiclesData);
-      setFilteredVehicles(vehiclesData);
-      setIsLoading(false);
-
-      // Initialize filters with data ranges
+    if (vehicles.length > 0) {
+      setFilteredVehicles(vehicles);
       setFilters((prev) => ({
         ...prev,
         minYear: minYearAvailable,
@@ -582,10 +204,14 @@ export function VehicleGrid() {
         minPrice: minPriceAvailable,
         maxPrice: maxPriceAvailable,
       }));
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  }, [
+    vehicles,
+    minYearAvailable,
+    maxYearAvailable,
+    minPriceAvailable,
+    maxPriceAvailable,
+  ]);
 
   // Apply filters
   useEffect(() => {
@@ -602,7 +228,7 @@ export function VehicleGrid() {
           vehicle.brand.toLowerCase().includes(searchTerm) ||
           vehicle.model.toLowerCase().includes(searchTerm) ||
           vehicle.vin.toLowerCase().includes(searchTerm) ||
-          vehicle.plate.toLowerCase().includes(searchTerm)
+          (vehicle.plate && vehicle.plate.toLowerCase().includes(searchTerm))
       );
       activeFilterCount++;
     }
@@ -635,11 +261,13 @@ export function VehicleGrid() {
       activeFilterCount++;
     }
 
-    // Price filter
-    filtered = filtered.filter(
-      (vehicle) =>
-        vehicle.price >= filters.minPrice && vehicle.price <= filters.maxPrice
-    );
+    // Price filter (convert string price to number)
+    filtered = filtered.filter((vehicle) => {
+      const vehiclePrice = Number.parseFloat(vehicle.price);
+      return (
+        vehiclePrice >= filters.minPrice && vehiclePrice <= filters.maxPrice
+      );
+    });
     if (
       filters.minPrice > minPriceAvailable ||
       filters.maxPrice < maxPriceAvailable
@@ -673,7 +301,14 @@ export function VehicleGrid() {
 
     setFilteredVehicles(filtered);
     setActiveFilters(activeFilterCount);
-  }, [filters, vehicles]);
+  }, [
+    vehicles,
+    filters,
+    minYearAvailable,
+    maxYearAvailable,
+    minPriceAvailable,
+    maxPriceAvailable,
+  ]);
 
   // Update filter
   const updateFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
@@ -784,17 +419,17 @@ export function VehicleGrid() {
 
     setIsDeleting(true);
 
-    // Simulate API call
+    // TODO: Implement actual API call to delete vehicle
     setTimeout(() => {
-      setVehicles((prev) => prev.filter((v) => v.id !== vehicleToDelete.id));
       setDeleteDialogOpen(false);
       setVehicleToDelete(null);
       setIsDeleting(false);
 
       toast({
-        title: "Vehículo eliminado",
-        description: `${vehicleToDelete.brand} ${vehicleToDelete.model} ha sido eliminado correctamente.`,
-        variant: "success",
+        title: "Funcionalidad en desarrollo",
+        description:
+          "La eliminación de vehículos será implementada próximamente.",
+        variant: "default",
       });
     }, 800);
   };
@@ -807,20 +442,18 @@ export function VehicleGrid() {
   const confirmBulkDelete = () => {
     setIsDeleting(true);
 
-    // Simulate API call
+    // TODO: Implement actual API call to delete multiple vehicles
     setTimeout(() => {
-      setVehicles((prev) =>
-        prev.filter((v) => !selectedVehicles.includes(v.id))
-      );
       setBulkDeleteDialogOpen(false);
       setSelectedVehicles([]);
       setIsSelectionMode(false);
       setIsDeleting(false);
 
       toast({
-        title: "Vehículos eliminados",
-        description: `${selectedVehicles.length} vehículos han sido eliminados correctamente.`,
-        variant: "success",
+        title: "Funcionalidad en desarrollo",
+        description:
+          "La eliminación masiva de vehículos será implementada próximamente.",
+        variant: "default",
       });
     }, 800);
   };
@@ -831,16 +464,8 @@ export function VehicleGrid() {
 
     setIsDeleting(true); // Reuse loading state
 
-    // Simulate API call
+    // TODO: Implement actual API call to update vehicle statuses
     setTimeout(() => {
-      setVehicles((prev) =>
-        prev.map((v) =>
-          selectedVehicles.includes(v.id)
-            ? { ...v, status: newStatus as VehicleStatus }
-            : v
-        )
-      );
-
       setStatusChangeDialogOpen(false);
       setNewStatus("");
       setSelectedVehicles([]);
@@ -848,9 +473,10 @@ export function VehicleGrid() {
       setIsDeleting(false);
 
       toast({
-        title: "Estado actualizado",
-        description: `El estado de ${selectedVehicles.length} vehículos ha sido actualizado correctamente.`,
-        variant: "success",
+        title: "Funcionalidad en desarrollo",
+        description:
+          "La actualización de estado de vehículos será implementada próximamente.",
+        variant: "default",
       });
     }, 800);
   };
@@ -1016,10 +642,7 @@ export function VehicleGrid() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in-50 duration-500">
           {filteredVehicles.map((vehicle) => {
             const statusConfig = vehicleStatusMap[vehicle.status];
-            const isNew =
-              vehicle.mileage === 0 ||
-              vehicle.mileage === undefined ||
-              vehicle.mileage < 100;
+            const isNew = vehicle.condition === "new";
             const isSelected = selectedVehicles.includes(vehicle.id);
 
             return (
@@ -1060,52 +683,38 @@ export function VehicleGrid() {
                   onClick={(e) => isSelectionMode && e.preventDefault()}
                 >
                   <div
-                    className="relative aspect-[4/3] overflow-hidden bg-muted"
+                    className="relative aspect-[4/3] overflow-hidden bg-muted flex items-center justify-center"
                     onClick={(e) =>
                       isSelectionMode && toggleVehicleSelection(vehicle.id, e)
                     }
                   >
-                    <img
-                      src={vehicle.images[0] || "/placeholder.svg"}
-                      alt={`${vehicle.brand} ${vehicle.model}`}
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-
-                    {/* Assigned agent badge */}
-                    {vehicle.assignedTo && (
-                      <div className="absolute bottom-3 right-3 z-10">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="h-8 w-8 rounded-full bg-background border-2 border-primary overflow-hidden">
-                                {vehicle.assignedTo.avatar ? (
-                                  <img
-                                    src={
-                                      vehicle.assignedTo.avatar ||
-                                      "/placeholder.svg"
-                                    }
-                                    alt="vehiculo asignado"
-                                    width={32}
-                                    height={32}
-                                    className="object-cover"
-                                  />
-                                ) : (
-                                  <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-xs font-medium">
-                                    {vehicle.assignedTo.name
-                                      .split(" ")
-                                      .map((n) => n[0])
-                                      .join("")}
-                                  </div>
-                                )}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Asignado a: {vehicle.assignedTo.name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    )}
+                    {vehicle.images && vehicle.images.length > 0 ? (
+                      <img
+                        src={vehicle.images[0]}
+                        alt={`${vehicle.brand} ${vehicle.model}`}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          // Fallback to placeholder if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          target.nextElementSibling?.classList.remove("hidden");
+                        }}
+                      />
+                    ) : null}
+                    {/* Fallback placeholder - shown when no images or image fails to load */}
+                    <div
+                      className={cn(
+                        "flex flex-col items-center justify-center text-muted-foreground absolute inset-0",
+                        vehicle.images && vehicle.images.length > 0
+                          ? "hidden"
+                          : ""
+                      )}
+                    >
+                      <Car className="h-16 w-16 mb-2" />
+                      <span className="text-sm font-medium">
+                        {vehicle.brand}
+                      </span>
+                    </div>
                   </div>
 
                   <CardContent className="p-4">
@@ -1115,7 +724,7 @@ export function VehicleGrid() {
                           <h3 className="font-semibold text-lg leading-tight">
                             {vehicle.brand} {vehicle.model}
                           </h3>
-                          {/* Status and condition badges - moved from image overlay to content */}
+                          {/* Status and condition badges */}
                           <div className="flex flex-col gap-2 mt-2">
                             <TooltipProvider>
                               <Tooltip>
@@ -1149,7 +758,7 @@ export function VehicleGrid() {
                               ) : (
                                 <Clock className="h-3.5 w-3.5 mr-1" />
                               )}
-                              {isNew ? "Nuevo" : "Usado"}
+                              {translateCondition(vehicle.condition)}
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mt-2">
@@ -1182,7 +791,7 @@ export function VehicleGrid() {
                                                   .toLowerCase()
                                                   .includes("azul")
                                               ? "#3b82f6"
-                                              : undefined,
+                                              : "#64748b",
                                 }}
                               ></span>
                               {vehicle.color}
@@ -1190,29 +799,18 @@ export function VehicleGrid() {
                           </p>
                         </div>
                         <div className="text-right">
-                          {vehicle.onSale ? (
-                            <div>
-                              <p className="text-sm line-through text-muted-foreground">
-                                {formatCurrency(vehicle.price)}
-                              </p>
-                              <p className="font-bold text-lg text-primary">
-                                {formatCurrency(vehicle.salePrice!)}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="font-bold text-lg">
-                              {formatCurrency(vehicle.price)}
-                            </p>
-                          )}
+                          <p className="font-bold text-lg">
+                            {formatCurrency(Number.parseFloat(vehicle.price))}
+                          </p>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Key className="h-3.5 w-3.5" />
-                          <span>{vehicle.plate}</span>
+                          <span>{vehicle.plate || "Sin placa"}</span>
                         </div>
-                        {vehicle.mileage !== undefined && (
+                        {vehicle.mileage !== null && (
                           <div className="flex items-center gap-1">
                             <Gauge className="h-3.5 w-3.5" />
                             <span>{vehicle.mileage.toLocaleString()} km</span>
@@ -1220,15 +818,37 @@ export function VehicleGrid() {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        <span>
-                          Ingreso:{" "}
-                          {vehicle.addedDate
-                            ? formatDate(vehicle.addedDate)
-                            : "N/A"}
-                        </span>
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs">
+                            VIN: {vehicle.vin.slice(-8)}
+                          </span>
+                        </div>
+                        {vehicle.entryDate && (
+                          <div className="flex items-center gap-1 text-xs">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              {new Date(vehicle.entryDate).toLocaleDateString(
+                                "es-DO",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }
+                              )}
+                            </span>
+                          </div>
+                        )}
                       </div>
+
+                      {vehicle.concesionario && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Briefcase className="h-3 w-3" />
+                          <span>
+                            Concesionario: {vehicle.concesionario.name}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Link>
@@ -1237,12 +857,12 @@ export function VehicleGrid() {
                   <div className="flex items-center gap-2 text-xs">
                     <div className="flex items-center gap-1">
                       <Fuel className="h-3 w-3 text-muted-foreground" />
-                      <span>{vehicle.fuelType}</span>
+                      <span>{translateFuelType(vehicle.fuelType)}</span>
                     </div>
                     <div className="w-1 h-1 rounded-full bg-muted-foreground/30"></div>
                     <div className="flex items-center gap-1">
                       <GitFork className="h-3 w-3 text-muted-foreground" />
-                      <span>{vehicle.transmission}</span>
+                      <span>{translateTransmission(vehicle.transmission)}</span>
                     </div>
                   </div>
                   <Button
@@ -1271,11 +891,28 @@ export function VehicleGrid() {
           </DialogHeader>
           {vehicleToDelete && (
             <div className="flex items-center gap-4 py-2">
-              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md">
-                <img
-                  src={vehicleToDelete.images[0] || "/placeholder.svg"}
-                  alt={`${vehicleToDelete.brand} ${vehicleToDelete.model}`}
-                  className="object-cover"
+              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted flex items-center justify-center">
+                {vehicleToDelete.images && vehicleToDelete.images.length > 0 ? (
+                  <img
+                    src={vehicleToDelete.images[0]}
+                    alt={`${vehicleToDelete.brand} ${vehicleToDelete.model}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to car icon if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = "none";
+                      target.nextElementSibling?.classList.remove("hidden");
+                    }}
+                  />
+                ) : null}
+                {/* Fallback car icon - shown when no images or image fails to load */}
+                <Car
+                  className={cn(
+                    "h-8 w-8 text-muted-foreground absolute inset-0 m-auto",
+                    vehicleToDelete.images && vehicleToDelete.images.length > 0
+                      ? "hidden"
+                      : ""
+                  )}
                 />
               </div>
               <div>
@@ -1283,7 +920,8 @@ export function VehicleGrid() {
                   {vehicleToDelete.brand} {vehicleToDelete.model}
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  {vehicleToDelete.year} • {vehicleToDelete.plate}
+                  {vehicleToDelete.year} •{" "}
+                  {vehicleToDelete.plate || "Sin placa"}
                 </p>
               </div>
             </div>

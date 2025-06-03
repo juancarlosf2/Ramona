@@ -44,6 +44,7 @@ import {
   useCreateContract,
   getErrorMessage,
 } from "~/hooks/useSupabaseData";
+import type { Vehicle } from "~/types/vehicle";
 
 // Define the form schema with Zod
 const contractFormSchema = z.object({
@@ -100,8 +101,8 @@ const clients = [
   },
 ];
 
-// Sample vehicle data (remove once connected to server)
-const vehicles = [
+// Sample vehicle data (simplified version matching Vehicle type)
+const vehicles: Partial<Vehicle>[] = [
   {
     id: "1",
     brand: "Toyota",
@@ -109,7 +110,7 @@ const vehicles = [
     year: 2022,
     color: "Blanco",
     vin: "1HGCM82633A123456",
-    price: 950000,
+    price: "950000",
     status: "available",
   },
   {
@@ -119,7 +120,7 @@ const vehicles = [
     year: 2023,
     color: "Gris",
     vin: "5NPE24AF1FH123789",
-    price: 1250000,
+    price: "1250000",
     status: "available",
   },
   {
@@ -129,7 +130,7 @@ const vehicles = [
     year: 2022,
     color: "Rojo",
     vin: "KNDPB3AC8F7123456",
-    price: 1050000,
+    price: "1050000",
     status: "available",
   },
 ];

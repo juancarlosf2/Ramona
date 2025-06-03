@@ -378,6 +378,12 @@ export const fetchVehicles = createServerFn({ method: "GET" }).handler(
           status: true,
           concesionarioId: true,
           dealerId: true,
+          transmission: true,
+          fuelType: true,
+          mileage: true,
+          condition: true,
+          entryDate: true,
+          images: true,
         },
         with: {
           concesionario: {

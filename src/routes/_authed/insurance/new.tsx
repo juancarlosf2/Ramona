@@ -38,26 +38,14 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useState, useEffect } from "react";
+import type { Vehicle } from "~/types/vehicle";
 
-// Vehicle type definition
-type Vehicle = {
-  id: string;
-  brand: string;
-  model: string;
-  year: number;
+// Extended vehicle type for insurance page with additional fields
+type ExtendedVehicle = Vehicle & {
   trim?: string;
-  color: string;
-  vin: string;
-  plate: string;
-  price: number;
-  status: string;
-  mileage?: number;
-  fuelType: string;
-  transmission: string;
-  engineSize: string;
-  doors: number;
-  seats: number;
-  images: string[];
+  engineSize?: string;
+  doors?: number;
+  seats?: number;
   addedDate?: string;
   onSale?: boolean;
   salePrice?: number;
@@ -69,7 +57,7 @@ type Vehicle = {
 };
 
 // Sample vehicle data (same structure as in vehicle-grid.tsx)
-const vehiclesData: Vehicle[] = [
+const vehiclesData: ExtendedVehicle[] = [
   {
     id: "1",
     brand: "Toyota",
@@ -79,11 +67,11 @@ const vehiclesData: Vehicle[] = [
     color: "Blanco",
     vin: "1HGCM82633A123456",
     plate: "A123456",
-    price: 950000,
+    price: "950000",
     status: "available",
     mileage: 1500,
-    fuelType: "Gasolina",
-    transmission: "Automática",
+    fuelType: "gasoline",
+    transmission: "automatic",
     engineSize: "1.8L",
     doors: 4,
     seats: 5,
@@ -91,6 +79,8 @@ const vehiclesData: Vehicle[] = [
     addedDate: "2023-10-15",
     onSale: true,
     salePrice: 899000,
+    condition: "new",
+    vehicleType: "Sedán",
   },
   {
     id: "2",
@@ -100,11 +90,11 @@ const vehiclesData: Vehicle[] = [
     color: "Negro",
     vin: "2HGFG12567H789012",
     plate: "B789012",
-    price: 875000,
+    price: "875000",
     status: "sold",
     mileage: 12000,
-    fuelType: "Gasolina",
-    transmission: "Automática",
+    fuelType: "gasoline",
+    transmission: "automatic",
     engineSize: "2.0L",
     doors: 4,
     seats: 5,
@@ -119,11 +109,11 @@ const vehiclesData: Vehicle[] = [
     color: "Gris",
     vin: "5NPE24AF1FH123789",
     plate: "C345678",
-    price: 1250000,
+    price: "1250000",
     status: "reserved",
     mileage: 500,
-    fuelType: "Gasolina",
-    transmission: "Automática",
+    fuelType: "gasoline",
+    transmission: "automatic",
     engineSize: "2.0L",
     doors: 5,
     seats: 5,
@@ -138,11 +128,11 @@ const vehiclesData: Vehicle[] = [
     color: "Rojo",
     vin: "KNDPB3AC8F7123456",
     plate: "D901234",
-    price: 1050000,
+    price: "1050000",
     status: "in_process",
     mileage: 3500,
-    fuelType: "Gasolina",
-    transmission: "Automática",
+    fuelType: "gasoline",
+    transmission: "automatic",
     engineSize: "2.0L",
     doors: 5,
     seats: 5,
@@ -157,11 +147,11 @@ const vehiclesData: Vehicle[] = [
     color: "Azul",
     vin: "3N1AB7AP3FY123456",
     plate: "E567890",
-    price: 925000,
+    price: "925000",
     status: "maintenance",
     mileage: 1200,
-    fuelType: "Gasolina",
-    transmission: "Automática",
+    fuelType: "gasoline",
+    transmission: "automatic",
     engineSize: "1.8L",
     doors: 4,
     seats: 5,
@@ -176,11 +166,11 @@ const vehiclesData: Vehicle[] = [
     color: "Plata",
     vin: "JTMWFREV0JD123456",
     plate: "F123456",
-    price: 1350000,
+    price: "1350000",
     status: "available",
     mileage: 800,
-    fuelType: "Gasolina",
-    transmission: "Automática",
+    fuelType: "gasoline",
+    transmission: "automatic",
     engineSize: "2.5L",
     doors: 5,
     seats: 5,
