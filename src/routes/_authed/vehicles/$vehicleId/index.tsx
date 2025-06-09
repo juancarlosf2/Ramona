@@ -61,7 +61,6 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import type { VehicleById, VehicleStatus } from "~/types/vehicle";
-import { fetchVehicleById } from "~/server/api";
 import {
   vehicleByIdQueryOptions,
   useSuspenseVehicle,

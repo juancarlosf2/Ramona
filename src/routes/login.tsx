@@ -44,12 +44,9 @@ export const Route = createFileRoute("/login")({
 });
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
-import {
-  signupFn,
-  signupSchema,
-  SignupSchemaTypes,
-} from "~/services/auth/signup";
+import { signupSchema, SignupSchemaTypes } from "~/services/auth/signup";
 import { loginFn } from "./_authed";
+import { signupFn } from "./signup";
 
 // Form validation schemas
 const loginSchema = z.object({

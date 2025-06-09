@@ -7,7 +7,7 @@ import { getSupabaseServerClient } from "~/utils/supabase";
 import { createServerFn } from "@tanstack/react-start";
 
 // Server-side helper to get the current user from the session
-export async function getUser() {
+export const getUser = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const supabase = await getSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser();
@@ -32,7 +32,7 @@ export async function getUser() {
     console.error("Error getting user:", error);
     return null;
   }
-}
+});
 
 // Helper to get the user's dealerId
 async function getUserDealerId() {

@@ -11,7 +11,6 @@ import * as React from "react";
 import { DefaultCatchBoundary } from "../components/DefaultCatchBoundary";
 import appCss from "../styles/app.css?url";
 import { seo } from "../utils/seo";
-import { getSupabaseServerClient } from "../utils/supabase";
 import { NotFound } from "~/components/NotFound";
 
 import { ThemeProvider } from "~/components/theme-provider";
