@@ -1,6 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import {
   fetchVehicles,
+  fetchVehicleById,
   fetchClients,
   fetchContracts,
   fetchDealerInfo,
@@ -23,6 +29,7 @@ import type {
 // Query Keys
 export const QUERY_KEYS = {
   vehicles: ["vehicles"] as const,
+  vehicle: (id: string) => ["vehicles", id] as const,
   clients: ["clients"] as const,
   contracts: ["contracts"] as const,
   dealers: ["dealers"] as const,
@@ -30,7 +37,25 @@ export const QUERY_KEYS = {
   profile: ["profile"] as const,
 } as const;
 
+// ===== QUERY OPTIONS =====
+
+/**
+ * Query options for vehicle by ID - used for server prefetching and client queries
+ */
+export const vehicleByIdQueryOptions = (vehicleId: string) => ({
+  queryKey: QUERY_KEYS.vehicle(vehicleId),
+  queryFn: () => fetchVehicleById({ data: { vehicleId } }),
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
 // ===== QUERY HOOKS =====
+
+/**
+ * Fetch single vehicle by ID with purchasedBy information (suspense version for loaders)
+ */
+export function useSuspenseVehicle(vehicleId: string) {
+  return useSuspenseQuery(vehicleByIdQueryOptions(vehicleId));
+}
 
 /**
  * Fetch all vehicles with their related data

@@ -11,10 +11,7 @@ type VehicleCardProps = {
   className?: string;
 };
 
-export function VehicleCard({
-  vehicle,
-  className,
-}: VehicleCardProps) {
+export function VehicleCard({ vehicle, className }: VehicleCardProps) {
   const statusConfig = vehicleStatusMap[vehicle.status];
   const isNew = vehicle.condition === "new";
 
@@ -47,11 +44,13 @@ export function VehicleCard({
               <h3 className="font-medium">
                 {vehicle.year} {vehicle.brand} {vehicle.model}
               </h3>
-              {vehicle.mileage !== undefined && vehicle.mileage !== null && vehicle.mileage > 0 && (
-                <p className="text-sm text-foreground/70">
-                  {vehicle.mileage.toLocaleString()} km
-                </p>
-              )}
+              {vehicle.mileage !== undefined &&
+                vehicle.mileage !== null &&
+                vehicle.mileage > 0 && (
+                  <p className="text-sm text-foreground/70">
+                    {vehicle.mileage.toLocaleString()} km
+                  </p>
+                )}
             </div>
             <span
               className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border shadow-sm ${statusConfig.className}`}
@@ -61,7 +60,9 @@ export function VehicleCard({
           </div>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex justify-between items-center">
-          <span className="font-bold">{formatCurrency(Number(vehicle.price))}</span>
+          <span className="font-bold">
+            {formatCurrency(Number(vehicle.price))}
+          </span>
           <span className="text-xs text-muted-foreground underline">
             Ver detalles
           </span>

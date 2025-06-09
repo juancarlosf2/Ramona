@@ -40,12 +40,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "~/components/ui/accordion";
 import { cn, formatCurrency } from "~/lib/utils";
 import { vehicleStatusMap } from "~/lib/vehicle-status-config";
 import {
@@ -60,19 +54,30 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { toast } from "~/hooks/use-toast";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import type { Vehicle, VehicleStatus } from "~/types/vehicle";
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useRouter,
+} from "@tanstack/react-router";
+import type { VehicleById, VehicleStatus } from "~/types/vehicle";
+import { fetchVehicleById } from "~/server/api";
+import {
+  vehicleByIdQueryOptions,
+  useSuspenseVehicle,
+} from "~/hooks/useSupabaseData";
 
 // Extended vehicle type for mock data (includes additional fields not in database)
-type ExtendedVehicle = Vehicle & {
-  trim?: string;
-  engineSize?: string;
-  doors?: number;
-  seats?: number;
+type ExtendedVehicle = VehicleById & {
+  // TODO: These fields don't exist in the actual database schema yet
+  // Temporarily commented out until database is updated
   purchasedBy?: {
     id: string;
     name: string;
     amount: number;
+    contractDate: string;
+    cedula?: string;
+    email?: string;
   };
   performance?: {
     acceleration: string;
@@ -90,7 +95,7 @@ type ExtendedVehicle = Vehicle & {
     convenience: string[];
     packages: string[];
   };
-  dealerNotes?: string;
+  // Note: dealerNotes field doesn't exist in database yet - using description field instead
 };
 
 // Ship component for the importing status icon
@@ -152,105 +157,7 @@ const keyDetailIcons: Record<string, React.ReactNode> = {
   color: <Palette className="h-4 w-4 text-muted-foreground" />,
 };
 
-// Mock data for a vehicle (with extended fields for demo)
-const vehicleData: ExtendedVehicle = {
-  id: "1",
-  brand: "Toyota",
-  model: "Corolla",
-  year: 2023,
-  trim: "XSE CVT",
-  color: "Rojo metálico",
-  vin: "1HGCM82633A123456",
-  plate: "A123456",
-  price: "950000", // Server returns price as string
-  status: "available",
-  condition: "new", // Use actual condition field
-  mileage: 1500,
-  fuelType: "gasoline",
-  transmission: "automatic",
-  engineSize: "1.8L",
-  doors: 4,
-  seats: 5,
-  concesionarioId: null,
-  dealerId: "dealer1",
-  entryDate: new Date().toISOString(),
-  images: [
-    "/placeholder.svg?key=j6w9e",
-    "/placeholder.svg?key=adz9j",
-    "/placeholder.svg?key=t39ln",
-    "/placeholder.svg?key=9aj4r",
-    "/placeholder.svg?key=pzahb",
-    "/placeholder.svg?key=flvdy",
-  ],
-  performance: {
-    acceleration: "7.5 segundos",
-    topSpeed: "220 km/h",
-    emissions: "CO2 149 g/km",
-    fuelEfficiency: "44 km/l",
-  },
-  features: {
-    exterior: [
-      "Faros LED",
-      "Luces diurnas LED",
-      "Espejos laterales eléctricos",
-      "Techo solar panorámico",
-      "Llantas de aleación de 18 pulgadas",
-      "Antena tipo aleta de tiburón",
-    ],
-    interior: [
-      "Asientos de cuero",
-      "Asientos delanteros calefaccionados",
-      "Volante forrado en cuero",
-      "Climatizador automático de doble zona",
-      "Iluminación ambiental LED",
-      "Asiento del conductor con ajuste eléctrico",
-    ],
-    safety: [
-      "Sistema de frenado antibloqueo (ABS)",
-      "Control de estabilidad electrónico (ESC)",
-      "Airbags frontales, laterales y de cortina",
-      "Cámara de visión trasera",
-      "Sensores de estacionamiento delanteros y traseros",
-      "Sistema de monitoreo de punto ciego",
-    ],
-    multimedia: [
-      "Pantalla táctil de 8 pulgadas",
-      "Sistema de navegación GPS",
-      "Apple CarPlay y Android Auto",
-      "Sistema de audio premium con 8 altavoces",
-      "Bluetooth para llamadas y audio",
-      "Cargador inalámbrico para smartphone",
-    ],
-    engine: [
-      "Motor 1.8L 4 cilindros",
-      "Potencia: 169 HP",
-      "Torque: 205 Nm",
-      "Sistema Start-Stop",
-      "Modo de conducción ECO",
-      "Dirección asistida eléctricamente",
-    ],
-    wheels: [
-      "Llantas de aleación de 18 pulgadas",
-      "Neumáticos 225/40R18",
-      "Kit de reparación de neumáticos",
-    ],
-    convenience: [
-      "Entrada sin llave",
-      "Botón de encendido",
-      "Control de crucero adaptativo",
-      "Asistente de mantenimiento de carril",
-      "Espejo retrovisor con atenuación automática",
-      "Limpiaparabrisas con sensor de lluvia",
-    ],
-    packages: [
-      "Paquete Premium",
-      "Paquete de Seguridad Avanzada",
-      "Paquete de Tecnología",
-    ],
-  },
-  dealerNotes:
-    "Este Toyota Corolla XSE CVT 2023 se encuentra en excelentes condiciones. Ha pasado por una inspección completa de 150 puntos y cuenta con garantía del fabricante vigente. El vehículo tiene un historial de servicio completo y ha sido mantenido según las especificaciones del fabricante.",
-};
+// TODO: Mock data removed - now using real data from database via useSuspenseVehicle hook
 
 // Component for animated counter
 const AnimatedCounter = ({
@@ -309,14 +216,29 @@ const copyToClipboard = (text: string, description: string) => {
 };
 
 export const Route = createFileRoute("/_authed/vehicles/$vehicleId/")({
+  loader: async ({ context, params: { vehicleId } }) => {
+    // Skip data loading if this is the "new" route
+    if (vehicleId === "new") {
+      throw redirect({ to: "/vehicles/register", replace: true });
+    }
+
+    // Use queryClient.ensureQueryData to prefetch vehicle data on the server
+    // The queryClient is available through the router context via routerWithQueryClient
+    const queryClient = (context as any).queryClient;
+    if (queryClient) {
+      await queryClient.ensureQueryData(vehicleByIdQueryOptions(vehicleId));
+    }
+  },
   component: VehicleDetailPage,
 });
 
 export default function VehicleDetailPage() {
   const router = useRouter();
   const { vehicleId: id } = Route.useParams();
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Use suspense query to get vehicle data
+  const { data: vehicle } = useSuspenseVehicle(id);
+
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isHeaderSticky, setIsHeaderSticky] = useState(false);
@@ -325,36 +247,6 @@ export default function VehicleDetailPage() {
 
   // State for redirection check
   const [shouldRedirect, setShouldRedirect] = useState(false);
-
-  // Check if we're on the "new" route and redirect if necessary
-  useEffect(() => {
-    // If the ID is "new", we should be on the registration page, not the detail page
-    if (id === "new") {
-      // Set the state to trigger the redirection
-      setShouldRedirect(true);
-      return;
-    }
-
-    // For all other IDs, load the vehicle data as normal
-    const timer = setTimeout(() => {
-      setVehicle(vehicleData);
-      setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [id, router]);
-
-  // Redirect only after the initial render
-  useEffect(() => {
-    if (shouldRedirect) {
-      router.navigate({ replace: true, to: "/vehicles/register" });
-    }
-  }, [shouldRedirect, router]);
-
-  // If we're on the "new" route, don't render anything as we'll be redirected
-  if (id === "new") {
-    return null;
-  }
 
   // Handle scroll for sticky header
   useEffect(() => {
@@ -371,14 +263,16 @@ export default function VehicleDetailPage() {
 
   // Handle image navigation
   const nextImage = () => {
-    if (!vehicle) return;
-    setActiveImageIndex((prev) => (prev + 1) % vehicle.images.length);
+    if (!vehicle?.images || vehicle.images.length === 0) return;
+    setActiveImageIndex((prev) => (prev + 1) % (vehicle.images?.length || 1));
   };
 
   const prevImage = () => {
-    if (!vehicle) return;
+    if (!vehicle?.images || vehicle.images.length === 0) return;
     setActiveImageIndex(
-      (prev) => (prev - 1 + vehicle.images.length) % vehicle.images.length
+      (prev) =>
+        (prev - 1 + (vehicle.images?.length || 1)) %
+        (vehicle.images?.length || 1)
     );
   };
 
@@ -392,23 +286,6 @@ export default function VehicleDetailPage() {
     setIsLightboxOpen(false);
     document.body.style.overflow = "auto";
   };
-
-  if (isLoading || !vehicle) {
-    return (
-      <div className="container py-12 animate-pulse">
-        <div className="h-8 w-32 bg-muted rounded mb-6"></div>
-        <div className="h-12 w-3/4 bg-muted rounded mb-8"></div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="md:col-span-1 space-y-4">
-            <div className="h-24 bg-muted rounded"></div>
-            <div className="h-24 bg-muted rounded"></div>
-            <div className="h-24 bg-muted rounded"></div>
-          </div>
-          <div className="md:col-span-3 h-96 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
-  }
 
   const statusConfig = vehicleStatusMap[vehicle.status];
   // Use actual condition field instead of mileage-based logic
@@ -441,7 +318,7 @@ export default function VehicleDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">
-              {formatCurrency(vehicle.price)}
+              {formatCurrency(Number(vehicle.price))}
             </span>
           </div>
         </div>
@@ -479,7 +356,7 @@ export default function VehicleDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Left column - Thumbnails */}
           <div className="md:col-span-1 hidden md:flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {vehicle.images.map((image, index) => (
+            {(vehicle.images || []).map((image, index) => (
               <div
                 key={index}
                 className={cn(
@@ -512,7 +389,10 @@ export default function VehicleDetailPage() {
             {/* Main image carousel */}
             <div className="relative aspect-[16/10] rounded-lg overflow-hidden bg-muted/20 group shadow-md">
               <img
-                src={vehicle.images[activeImageIndex] || "/placeholder.svg"}
+                src={
+                  (vehicle.images && vehicle.images[activeImageIndex]) ||
+                  "/placeholder.svg"
+                }
                 alt={`${vehicle.brand} ${vehicle.model}`}
                 className="object-cover animate-in fade-in zoom-in-95 duration-300"
                 onClick={openLightbox}
@@ -542,13 +422,13 @@ export default function VehicleDetailPage() {
                 </Button>
               </div>
               <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium">
-                {activeImageIndex + 1} / {vehicle.images.length}
+                {activeImageIndex + 1} / {vehicle.images?.length || 0}
               </div>
             </div>
 
             {/* Mobile thumbnails */}
             <div className="flex gap-2 overflow-x-auto pb-2 md:hidden">
-              {vehicle.images.map((image, index) => (
+              {(vehicle.images || []).map((image, index) => (
                 <div
                   key={index}
                   className={cn(
@@ -575,7 +455,7 @@ export default function VehicleDetailPage() {
                   {vehicle.year} {vehicle.brand} {vehicle.model}
                 </h1>
                 <h2 className="text-lg text-muted-foreground font-medium">
-                  {vehicle.trim}
+                  {vehicle.trim || "N/A"}
                 </h2>
 
                 {/* Status and condition badges - Using standardized styling */}
@@ -629,7 +509,8 @@ export default function VehicleDetailPage() {
               </div>
             </div>
 
-            {/* Purchase attribution banner (if sold) - Enhanced */}
+            {/* TODO: Purchase attribution banner - purchasedBy field doesn't exist in database yet */}
+            {/*
             {vehicle.purchasedBy && (
               <Card className="border-primary/20 bg-primary/5 animate-in fade-in zoom-in-95 duration-300 delay-200 shadow-sm">
                 <CardContent className="p-4 flex items-center gap-2">
@@ -653,6 +534,7 @@ export default function VehicleDetailPage() {
                 </CardContent>
               </Card>
             )}
+            */}
 
             {/* Section Divider */}
             <div className="relative">
@@ -720,7 +602,9 @@ export default function VehicleDetailPage() {
                         {keyDetailIcons["plate"]}
                         <div>
                           <p className="text-sm text-muted-foreground">Placa</p>
-                          <p className="font-medium">{vehicle.plate}</p>
+                          <p className="font-medium">
+                            {vehicle.plate || "N/A"}
+                          </p>
                         </div>
                       </div>
                       <Tooltip>
@@ -731,7 +615,7 @@ export default function VehicleDetailPage() {
                             className="opacity-50 hover:opacity-100"
                             onClick={() =>
                               copyToClipboard(
-                                vehicle.plate,
+                                vehicle.plate || "",
                                 "Número de placa copiado al portapapeles"
                               )
                             }
@@ -759,7 +643,7 @@ export default function VehicleDetailPage() {
                 </Card>
 
                 {/* Mileage Card */}
-                {vehicle.mileage !== undefined && (
+                {vehicle.mileage !== null && vehicle.mileage !== undefined && (
                   <Card className="bg-muted/30 hover:bg-muted/40 transition-colors duration-200">
                     <CardContent className="flex items-center gap-3 p-4">
                       {keyDetailIcons["mileage"]}
@@ -768,7 +652,7 @@ export default function VehicleDetailPage() {
                           Kilometraje
                         </p>
                         <p className="font-medium">
-                          {vehicle.mileage.toLocaleString()} km
+                          {vehicle.mileage?.toLocaleString()} km
                         </p>
                       </div>
                     </CardContent>
@@ -811,7 +695,9 @@ export default function VehicleDetailPage() {
                     {keyDetailIcons["engineSize"]}
                     <div>
                       <p className="text-sm text-muted-foreground">Motor</p>
-                      <p className="font-medium">{vehicle.engineSize}</p>
+                      <p className="font-medium">
+                        {vehicle.engineSize || "N/A"}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -825,7 +711,8 @@ export default function VehicleDetailPage() {
                         Puertas / Asientos
                       </p>
                       <p className="font-medium">
-                        {vehicle.doors} puertas / {vehicle.seats} asientos
+                        {vehicle.doors || "N/A"} puertas /{" "}
+                        {vehicle.seats || "N/A"} asientos
                       </p>
                     </div>
                   </CardContent>
@@ -856,7 +743,8 @@ export default function VehicleDetailPage() {
               </div>
             </div>
 
-            {/* Section Divider */}
+            {/* TODO: Performance section commented out - performance field doesn't exist in database yet */}
+            {/*
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-muted"></div>
@@ -868,7 +756,6 @@ export default function VehicleDetailPage() {
               </div>
             </div>
 
-            {/* Stats & Performance Section - Enhanced with better contrast */}
             {vehicle.performance && (
               <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-300">
                 <h3 className="text-xl font-semibold flex items-center gap-2">
@@ -923,7 +810,7 @@ export default function VehicleDetailPage() {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-foreground/70 mb-1">
-                              Emisiones
+                              Emisiones CO₂
                             </div>
                             <div className="text-xl font-bold">
                               {vehicle.performance.emissions}
@@ -942,7 +829,7 @@ export default function VehicleDetailPage() {
                           </div>
                           <div>
                             <div className="text-sm font-medium text-foreground/70 mb-1">
-                              Rendimiento
+                              Eficiencia
                             </div>
                             <div className="text-xl font-bold">
                               {vehicle.performance.fuelEfficiency}
@@ -955,6 +842,7 @@ export default function VehicleDetailPage() {
                 </div>
               </div>
             )}
+            */}
 
             {/* Section Divider */}
             <div className="relative">
@@ -968,212 +856,92 @@ export default function VehicleDetailPage() {
               </div>
             </div>
 
-            {/* Expandable Feature Sections - Enhanced */}
+            {/* Features and Equipment */}
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-350">
               <h3 className="text-xl font-semibold flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
                 Características
               </h3>
-              <Card className="border shadow-sm">
-                <Accordion type="single" collapsible className="w-full">
-                  {vehicle.dealerNotes && (
-                    <AccordionItem value="dealer-notes">
-                      <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                        <div className="flex items-center">
-                          {categoryIcons["dealer-notes"]}
-                          Notas del concesionario
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                        <p className="text-muted-foreground">
-                          {vehicle.dealerNotes}
-                        </p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-                  <AccordionItem value="exterior">
-                    <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                      <div className="flex items-center">
-                        {categoryIcons["exterior"]}
-                        Características exteriores
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {vehicle.features.exterior.map((feature, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center gap-2 py-1.5 border-b last:border-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-primary/70" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="interior">
-                    <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                      <div className="flex items-center">
-                        {categoryIcons["interior"]}
-                        Características interiores
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {vehicle.features.interior.map((feature, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center gap-2 py-1.5 border-b last:border-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-primary/70" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="safety">
-                    <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                      <div className="flex items-center">
-                        {categoryIcons["safety"]}
-                        Seguridad
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {vehicle.features.safety.map((feature, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center gap-2 py-1.5 border-b last:border-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-primary/70" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="multimedia">
-                    <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                      <div className="flex items-center">
-                        {categoryIcons["multimedia"]}
-                        Multimedia / Infoentretenimiento
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {vehicle.features.multimedia.map((feature, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center gap-2 py-1.5 border-b last:border-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-primary/70" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="engine">
-                    <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                      <div className="flex items-center">
-                        {categoryIcons["engine"]}
-                        Motor / Tren motriz
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {vehicle.features.engine.map((feature, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center gap-2 py-1.5 border-b last:border-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-primary/70" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="wheels">
-                    <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                      <div className="flex items-center">
-                        {categoryIcons["wheels"]}
-                        Ruedas y suspensión
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {vehicle.features.wheels.map((feature, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center gap-2 py-1.5 border-b last:border-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-primary/70" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="convenience">
-                    <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                      <div className="flex items-center">
-                        {categoryIcons["convenience"]}
-                        Comodidad y conveniencia
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {vehicle.features.convenience.map((feature, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center gap-2 py-1.5 border-b last:border-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-primary/70" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                  {vehicle.features.packages.length > 0 && (
-                    <AccordionItem value="packages">
-                      <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 font-semibold text-base">
-                        <div className="flex items-center">
-                          {categoryIcons["packages"]}
-                          Paquetes y equipamiento
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-4 pb-4 pt-1 bg-muted/20">
-                        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {vehicle.features.packages.map((feature, index) => (
-                            <li
-                              key={index}
-                              className="flex items-center gap-2 py-1.5 border-b last:border-0"
-                            >
-                              <CheckCircle2 className="h-4 w-4 text-primary/70" />
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
+
+              {/* Show description if available */}
+              {vehicle.description ? (
+                <Card className="border shadow-sm">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-base mb-2 flex items-center gap-2">
+                      <Info className="h-4 w-4" />
+                      Notas del concesionario
+                    </h4>
+                    <p className="text-muted-foreground">
+                      {vehicle.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {/* TODO: Features section commented out - features field doesn't exist in database yet */}
+              {/*
+              {vehicle.features && (
+                <Accordion type="multiple" className="w-full space-y-2">
+                  {Object.entries(vehicle.features).map(([category, items]) => {
+                    if (!items || items.length === 0) return null;
+                    
+                    const categoryName = {
+                      exterior: "Características exteriores",
+                      interior: "Características interiores", 
+                      safety: "Sistemas de seguridad",
+                      multimedia: "Multimedia y conectividad",
+                      engine: "Especificaciones del motor",
+                      wheels: "Llantas y neumáticos",
+                      convenience: "Comodidad y conveniencia",
+                      packages: "Paquetes de equipamiento"
+                    }[category] || category;
+
+                    return (
+                      <AccordionItem
+                        key={category}
+                        value={category}
+                        className="border rounded-lg px-4"
+                      >
+                        <AccordionTrigger className="hover:no-underline py-3">
+                          <div className="flex items-center gap-2 font-medium">
+                            {categoryIcons[category] || <CheckCircle2 className="h-4 w-4 mr-2" />}
+                            <span>{categoryName}</span>
+                            <Badge variant="secondary" className="ml-auto">
+                              {items.length}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {items.map((item, index) => (
+                              <div key={index} className="flex items-center gap-2 text-sm">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                                <span>{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
                 </Accordion>
-              </Card>
+              )}
+              */}
             </div>
 
             {/* Call to action */}
             <div className="flex flex-col sm:flex-row gap-3 pt-6">
               <Button size="lg" className="gap-2 shadow-sm">
-                <ExternalLink className="h-4 w-4" />
+                <FileCheck className="h-4 w-4" />
                 <span>Ver contrato</span>
               </Button>
               <Button variant="outline" size="lg" className="gap-2 shadow-sm">
                 <ArrowLeft className="h-4 w-4" />
                 <span>Volver al inventario</span>
+              </Button>
+              <Button variant="secondary" size="lg" className="gap-2 shadow-sm">
+                <Briefcase className="h-4 w-4" />
+                <span>Generar reporte</span>
               </Button>
             </div>
           </div>
@@ -1199,7 +967,10 @@ export default function VehicleDetailPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={vehicle.images[activeImageIndex] || "/placeholder.svg"}
+              src={
+                (vehicle.images && vehicle.images[activeImageIndex]) ||
+                "/placeholder.svg"
+              }
               alt={`${vehicle.brand} ${vehicle.model}`}
               className="object-contain animate-in zoom-in-95 duration-300"
             />
@@ -1228,7 +999,7 @@ export default function VehicleDetailPage() {
               </Button>
             </div>
             <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium">
-              {activeImageIndex + 1} / {vehicle.images.length}
+              {activeImageIndex + 1} / {vehicle.images?.length || 0}
             </div>
           </div>
         </div>

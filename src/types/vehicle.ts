@@ -1,8 +1,9 @@
 // Type inference from fetchVehicles return type
-import type { fetchVehicles } from "~/server/api";
+import type { fetchVehicles, fetchVehicleById } from "~/server/api";
 
 // Infer the Vehicle type from the fetchVehicles function
 export type Vehicle = Awaited<ReturnType<typeof fetchVehicles>>[number];
+export type VehicleById = Awaited<ReturnType<typeof fetchVehicleById>>;
 
 // Utility type for vehicle status
 export type VehicleStatus = Vehicle["status"];

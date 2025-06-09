@@ -22,7 +22,7 @@ import type { VehicleStatus } from "~/types/vehicle";
  * Centralized vehicle status configuration
  * Maps vehicle status to display properties (label, styling, icons, descriptions)
  * Used across all vehicle-related components for consistency
- * 
+ *
  * Currently active statuses: available, sold, reserved, in_process, maintenance
  * Future statuses are commented out and can be enabled when added to database schema
  */

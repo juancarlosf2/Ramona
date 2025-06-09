@@ -18,7 +18,7 @@ import {
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 import { VehicleStatusSelector } from "~/components/vehicles/vehicle-status-selector";
-import { ImageUploader } from "~/components/vehicles/image-uploader";
+import { VehicleImageUpload } from "~/components/vehicles/vehicle-image-upload";
 
 interface VehicleGeneralInfoFormProps {
   form: UseFormReturn<VehicleFormValues>;
@@ -339,9 +339,10 @@ export function VehicleGeneralInfoForm({ form }: VehicleGeneralInfoFormProps) {
           <FormItem>
             <FormLabel>Foto(s) del vehículo</FormLabel>
             <FormControl>
-              <ImageUploader
-                value={field.value || []}
-                onChange={(urls) => field.onChange(urls)}
+              <VehicleImageUpload
+                initialImages={field.value || []}
+                onImagesChange={(urls) => field.onChange(urls)}
+                maxImages={10}
               />
             </FormControl>
             <FormMessage />

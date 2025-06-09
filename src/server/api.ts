@@ -7,18 +7,28 @@ import { getSupabaseServerClient } from "~/utils/supabase";
 import { createServerFn } from "@tanstack/react-start";
 
 // Server-side helper to get the current user from the session
-async function getUser() {
+export async function getUser() {
   try {
     const supabase = await getSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser();
 
     if (error || !data.user) {
+      console.error("Error getting user from Supabase:", error);
       console.log("No authenticated user found");
       return null;
     }
 
     return data.user;
-  } catch (error) {
+  } catch (error: any) {
+    // If it's a 503 error, log it but don't crash the app
+    if (error?.status === 503) {
+      console.warn(
+        "Supabase auth service temporarily unavailable:",
+        error.message
+      );
+      return null;
+    }
+
     console.error("Error getting user:", error);
     return null;
   }
@@ -984,6 +994,142 @@ export const fetchMyProfile = createServerFn({ method: "GET" }).handler(
     }
   }
 );
+
+// Fetch single vehicle by ID with purchasedBy information
+export const fetchVehicleById = createServerFn({
+  method: "GET",
+})
+  .validator(
+    z.object({
+      vehicleId: z.string().uuid("ID de vehículo inválido"),
+    })
+  )
+  .handler(async ({ data }) => {
+    console.log(
+      "Server function: fetchVehicleById called with ID:",
+      data.vehicleId
+    );
+
+    // Auth Check: Only authenticated users can fetch vehicle details
+    const user = await getUser();
+    if (!user) {
+      console.warn("Server function: Unauthorized access to fetchVehicleById");
+      throw new Error("Unauthorized: User not authenticated.");
+    }
+
+    // Get user's dealerId for multi-tenant filtering
+    const dealerId = await getUserDealerId();
+    if (!dealerId) {
+      console.warn("Server function: User has no associated dealer");
+      throw new Error("Usuario no tiene concesionario asociado.");
+    }
+
+    try {
+      // Query the vehicle with all related data
+      const vehicle = await db.query.vehicles.findFirst({
+        where: and(
+          eq(schema.vehicles.id, data.vehicleId),
+          eq(schema.vehicles.dealerId, dealerId)
+        ),
+        columns: {
+          id: true,
+          brand: true,
+          model: true,
+          year: true,
+          trim: true,
+          color: true,
+          vin: true,
+          plate: true,
+          price: true,
+          status: true,
+          condition: true,
+          mileage: true,
+          fuelType: true,
+          transmission: true,
+          engineSize: true,
+          doors: true,
+          seats: true,
+          description: true,
+          concesionarioId: true,
+          dealerId: true,
+          entryDate: true,
+          images: true,
+        },
+        with: {
+          concesionario: {
+            columns: { id: true, name: true },
+          },
+          contracts: {
+            columns: {
+              id: true,
+              status: true,
+              clientId: true,
+              price: true,
+              date: true,
+            },
+            with: {
+              client: {
+                columns: {
+                  id: true,
+                  name: true,
+                  cedula: true,
+                  email: true,
+                },
+              },
+            },
+            where: eq(schema.contracts.status, "completed"), // Only get completed contracts
+          },
+        },
+      });
+
+      if (!vehicle) {
+        console.warn(
+          `Server function: Vehicle ${data.vehicleId} not found for dealer ${dealerId}`
+        );
+        throw new Error("Vehículo no encontrado.");
+      }
+
+      // Process the purchasedBy information from contracts
+      let purchasedBy = null;
+      if (vehicle.contracts && vehicle.contracts.length > 0) {
+        // Find the most recent completed contract
+        const completedContract = vehicle.contracts
+          .filter(
+            (contract) => contract.status === "completed" && contract.client
+          )
+          .sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          )[0];
+
+        if (completedContract && completedContract.client) {
+          purchasedBy = {
+            id: completedContract.client.id,
+            name: completedContract.client.name,
+            amount: Number(completedContract.price) || 0,
+            contractDate: completedContract.date,
+            cedula: completedContract.client.cedula,
+            email: completedContract.client.email,
+          };
+        }
+      }
+
+      // Return vehicle with purchasedBy information
+      const vehicleWithPurchasedBy = {
+        ...vehicle,
+        purchasedBy,
+      };
+
+      console.log(
+        `Server function: fetchVehicleById found vehicle ${vehicle.id} with purchasedBy:`,
+        purchasedBy ? `${purchasedBy.name} (${purchasedBy.cedula})` : "none"
+      );
+
+      return vehicleWithPurchasedBy;
+    } catch (error: any) {
+      console.error("Server function: Error fetching vehicle by ID:", error);
+      throw new Error("Error al cargar vehículo: " + error.message);
+    }
+  });
 
 // Type exports for client-side use
 export type CreateClientInput = z.infer<typeof clientInsertSchema>;

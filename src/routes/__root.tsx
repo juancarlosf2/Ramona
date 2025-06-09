@@ -18,24 +18,23 @@ import { ThemeProvider } from "~/components/theme-provider";
 import { cn } from "~/lib/utils";
 import { AuthProvider } from "~/components/auth-provider";
 import { Toaster } from "~/components/ui/toaster";
+import { getUser } from "~/server/api";
 
 const fetchUser = createServerFn({ method: "GET" }).handler(async () => {
-  const supabase = await getSupabaseServerClient();
-  const { data, error: _error } = await supabase.auth.getUser();
-
-  if (!data.user?.email) {
+  const user = await getUser();
+  if (!user?.email) {
     return null;
   }
 
   // Safely access username with fallbacks
   const username =
-    data.user.user_metadata?.username ||
-    data.user.user_metadata?.name ||
-    data.user.email?.split("@")[0] ||
+    user.user_metadata?.username ||
+    user.user_metadata?.name ||
+    user.email?.split("@")[0] ||
     "Usuario";
 
   return {
-    email: data.user.email,
+    email: user.email,
     username: username,
   };
 });
