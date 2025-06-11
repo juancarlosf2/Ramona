@@ -1,51 +1,45 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const vehicleFormSchema = z.object({
   // Step 1: General Information
-  brand: z.string().min(1, { message: "La marca es requerida" }),
-  model: z.string().min(1, { message: "El modelo es requerido" }),
+  brand: z.string().min(1, { error: "La marca es requerida" }),
+  model: z.string().min(1, { error: "El modelo es requerido" }),
   year: z
     .number()
-    .int({ message: "El año debe ser un número entero" })
-    .min(1900, { message: "El año debe ser válido" })
+    .int({ error: "El año debe ser un número entero" })
+    .min(1900, { error: "El año debe ser válido" })
     .max(new Date().getFullYear() + 1, {
-      message: "El año no puede ser futuro",
+      error: "El año no puede ser futuro",
     }),
   trim: z.string().optional(),
-  vehicleType: z
-    .string()
-    .min(1, { message: "El tipo de vehículo es requerido" }),
-  color: z.string().min(1, { message: "El color es requerido" }),
-  status: z.string().min(1, { message: "El estado es requerido" }),
-  condition: z.string().min(1, { message: "La condición es requerida" }),
-  images: z.array(z.string()).optional(),
+  vehicleType: z.string().min(1, { error: "El tipo de vehículo es requerido" }),
+  color: z.string().min(1, { error: "El color es requerido" }),
+  status: z.string().min(1, { error: "El estado es requerido" }),
+  condition: z.string().min(1, { error: "La condición es requerida" }),
+  images: z.array(z.instanceof(File)).optional().default([]),
   description: z.string().optional(),
 
   // Step 2: Technical Specifications
-  transmission: z.string().min(1, { message: "La transmisión es requerida" }),
-  fuelType: z
-    .string()
-    .min(1, { message: "El tipo de combustible es requerido" }),
-  engineSize: z
-    .string()
-    .min(1, { message: "El tamaño del motor es requerido" }),
+  transmission: z.string().min(1, { error: "La transmisión es requerida" }),
+  fuelType: z.string().min(1, { error: "El tipo de combustible es requerido" }),
+  engineSize: z.string().min(1, { error: "El tamaño del motor es requerido" }),
   plate: z.string().optional(),
   vin: z
     .string()
-    .min(17, { message: "El VIN debe tener 17 caracteres" })
-    .max(17, { message: "El VIN debe tener 17 caracteres" }),
+    .min(17, { error: "El VIN debe tener 17 caracteres" })
+    .max(17, { error: "El VIN debe tener 17 caracteres" }),
   mileage: z.number().optional(),
-  doors: z.number().min(1, { message: "El número de puertas es requerido" }),
-  seats: z.number().min(1, { message: "El número de asientos es requerido" }),
+  doors: z.number().min(1, { error: "El número de puertas es requerido" }),
+  seats: z.number().min(1, { error: "El número de asientos es requerido" }),
 
   // Step 3: Financial and Administrative
-  price: z.string().min(1, { message: "El precio es requerido" }),
+  price: z.string().min(1, { error: "El precio es requerido" }),
   hasOffer: z.boolean().default(false),
   offerPrice: z.string().optional(),
   adminStatus: z.string().optional(),
   inMaintenance: z.boolean().default(false),
   entryDate: z.string().datetime({
-    message: "La fecha de ingreso debe ser una fecha válida",
+    error: "La fecha de ingreso debe ser una fecha válida",
   }),
 
   // Step 4: Associations (Optional)

@@ -22,7 +22,7 @@ import type {
   CreateClientInput,
   CreateContractInput,
   CreateInsuranceInput,
-  CreateVehicleInput,
+  CreateVehicleFormInput,
   UpdateVehicleInput,
 } from "../server/api";
 
@@ -194,7 +194,47 @@ export function useCreateVehicle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateVehicleInput) => createVehicleServer({ data }),
+    mutationFn: async (data: CreateVehicleFormInput) => {
+      // Convert File objects to base64 strings for JSON serialization
+      const convertedImages = await Promise.all(
+        (data.images || []).map(async (file) => {
+          if (!(file instanceof File)) {
+            throw new Error("Invalid file object");
+          }
+
+          return new Promise<{
+            data: string;
+            name: string;
+            type: string;
+            size: number;
+          }>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              if (typeof reader.result === "string") {
+                resolve({
+                  data: reader.result, // This includes the data URL prefix
+                  name: file.name,
+                  type: file.type,
+                  size: file.size,
+                });
+              } else {
+                reject(new Error("Failed to read file"));
+              }
+            };
+            reader.onerror = () => reject(new Error("Failed to read file"));
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+
+      // Create data object with converted images
+      const dataWithBase64Images = {
+        ...data,
+        images: convertedImages,
+      };
+
+      return createVehicleServer({ data: dataWithBase64Images });
+    },
     onSuccess: () => {
       // Invalidate and refetch vehicles list
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vehicles });

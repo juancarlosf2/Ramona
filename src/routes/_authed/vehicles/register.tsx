@@ -41,7 +41,7 @@ function RegisterVehiclePage() {
       color: "",
       status: "available",
       condition: "new",
-      images: [],
+      images: [] as File[],
       description: "",
 
       transmission: "",
@@ -64,13 +64,17 @@ function RegisterVehiclePage() {
       clientName: "",
       contractId: "",
     },
+    mode: "onChange",
   });
 
   // Handle form submission
   const onSubmit = (data: VehicleFormValues) => {
-    console.log("Form submitted:", data);
+    // Ensure we have valid File objects for images
+    const validImages = (data.images || []).filter(
+      (img): img is File => img instanceof File && img.size > 0
+    );
 
-    // Prepare data for server submission
+    // Prepare data for server submission with proper type handling
     const vehicleData = {
       brand: data.brand,
       model: data.model,
@@ -85,7 +89,7 @@ function RegisterVehiclePage() {
         | "in_process"
         | "maintenance",
       condition: data.condition as "new" | "used",
-      images: data.images || [],
+      images: validImages, // Use filtered File objects
       description: data.description || undefined,
       transmission: data.transmission,
       fuelType: data.fuelType,

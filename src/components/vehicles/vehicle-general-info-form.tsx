@@ -340,8 +340,10 @@ export function VehicleGeneralInfoForm({ form }: VehicleGeneralInfoFormProps) {
             <FormLabel>Foto(s) del vehículo</FormLabel>
             <FormControl>
               <VehicleImageUpload
-                initialImages={field.value || []}
-                onImagesChange={(urls) => field.onChange(urls)}
+                initialFiles={Array.isArray(field.value) ? field.value : []}
+                onImagesChange={(files) => {
+                  field.onChange(files);
+                }}
                 maxImages={10}
               />
             </FormControl>

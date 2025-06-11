@@ -5,6 +5,7 @@ import * as schema from "~/db/schema"; // Import your Drizzle schema
 import { eq, and, asc } from "drizzle-orm"; // Drizzle ORM functions
 import { getSupabaseServerClient } from "~/utils/supabase";
 import { createServerFn } from "@tanstack/react-start";
+import { uploadVehicleImages } from "~/server/uploadthing";
 
 // Server-side helper to get the current user from the session
 export const getUser = createServerFn({ method: "GET" }).handler(async () => {
@@ -263,6 +264,114 @@ export const vehicleInsertSchema = z.object({
     .default("available"),
   condition: z.enum(["new", "used"]).default("new"),
   images: z.array(z.string()).optional().default([]),
+  description: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((d) => (d === "" ? null : d)),
+  transmission: z.string().min(1, "La transmisión es requerida").trim(),
+  fuelType: z.string().min(1, "El tipo de combustible es requerido").trim(),
+  engineSize: z.string().min(1, "El tamaño del motor es requerido").trim(),
+  plate: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((p) => (p === "" ? null : p)),
+  vin: z
+    .string()
+    .min(17, "El VIN debe tener 17 caracteres")
+    .max(17, "El VIN debe tener 17 caracteres")
+    .trim(),
+  mileage: z
+    .union([z.number().int().min(0), z.string()])
+    .optional()
+    .nullable()
+    .transform((val) => {
+      if (val === null || val === undefined || val === "") return null;
+      const parsed = parseInt(String(val), 10);
+      return isNaN(parsed) ? null : parsed;
+    }),
+  doors: z
+    .union([z.number().int().min(1), z.string().min(1)])
+    .transform((val) => {
+      const parsed = parseInt(String(val), 10);
+      return isNaN(parsed) ? null : parsed;
+    })
+    .nullable()
+    .refine((val) => val !== null, {
+      message: "El número de puertas es requerido",
+    }),
+  seats: z
+    .union([z.number().int().min(1), z.string().min(1)])
+    .transform((val) => {
+      const parsed = parseInt(String(val), 10);
+      return isNaN(parsed) ? null : parsed;
+    })
+    .nullable()
+    .refine((val) => val !== null, {
+      message: "El número de asientos es requerido",
+    }),
+  price: z
+    .union([z.number().min(0), z.string().min(1)])
+    .transform(parseCurrencyServer)
+    .nullable()
+    .refine((val) => val !== null && val > 0, {
+      message: "El precio es requerido",
+    }),
+  hasOffer: z.boolean().default(false),
+  offerPrice: z
+    .union([z.number().min(0), z.string()])
+    .optional()
+    .nullable()
+    .transform(parseCurrencyServer),
+  adminStatus: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((s) => (s === "" ? null : s)),
+  inMaintenance: z.boolean().default(false),
+  entryDate: z.iso.datetime({ offset: true }).optional().nullable(),
+  concesionarioId: z
+    .uuid("ID de concesionario inválido")
+    .optional()
+    .nullable()
+    .transform((id) => (id === "" ? null : id)),
+});
+
+// Form input schema that accepts File objects for images
+export const vehicleFormInputSchema = z.object({
+  brand: z.string().min(1, "La marca es requerida").trim(),
+  model: z.string().min(1, "El modelo es requerido").trim(),
+  year: z
+    .union([z.number().int().min(1900).max(2050), z.string().min(4)])
+    .transform((val) => {
+      const parsed = parseInt(String(val), 10);
+      return isNaN(parsed) ? null : parsed;
+    })
+    .nullable()
+    .refine((val) => val !== null, { message: "El año es requerido" }),
+  trim: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((t) => (t === "" ? null : t)),
+  vehicleType: z.string().min(1, "El tipo de vehículo es requerido").trim(),
+  color: z.string().min(1, "El color es requerido").trim(),
+  status: z
+    .enum(["available", "sold", "reserved", "in_process", "maintenance"])
+    .default("available"),
+  condition: z.enum(["new", "used"]).default("new"),
+  images: z
+    .array(
+      z.object({
+        data: z.string(), // base64 encoded file data
+        name: z.string(), // file name
+        type: z.string(), // mime type
+        size: z.number(), // file size
+      })
+    )
+    .optional()
+    .default([]), // Accept base64 encoded file objects
   description: z
     .string()
     .optional()
@@ -779,14 +888,13 @@ export const createInsuranceServer = createServerFn({ method: "POST" })
     }
   });
 
-// Create Vehicle
+// Create Vehicle with File Upload Support
 export const createVehicleServer = createServerFn({ method: "POST" })
-  .validator(vehicleInsertSchema)
+  .validator(vehicleFormInputSchema)
   .handler(async ({ data: vehicleData }) => {
-    console.log(
-      "Server function: createVehicleServer called with data",
-      vehicleData
-    );
+    console.log("Server function: createVehicleServer called");
+    console.log("Images count:", vehicleData.images?.length || 0);
+
     const user = await getUser();
     if (!user) {
       console.warn(
@@ -803,35 +911,97 @@ export const createVehicleServer = createServerFn({ method: "POST" })
     }
 
     try {
+      // Prepare database insert data first (can be done in parallel with image processing)
+      const prepareVehicleData = async () => ({
+        brand: vehicleData.brand,
+        model: vehicleData.model,
+        year: vehicleData.year,
+        trim: vehicleData.trim,
+        vehicleType: vehicleData.vehicleType,
+        color: vehicleData.color,
+        status: vehicleData.status,
+        condition: vehicleData.condition,
+        description: vehicleData.description,
+        transmission: vehicleData.transmission,
+        fuelType: vehicleData.fuelType,
+        engineSize: vehicleData.engineSize,
+        plate: vehicleData.plate,
+        vin: vehicleData.vin,
+        mileage: vehicleData.mileage,
+        doors: vehicleData.doors,
+        seats: vehicleData.seats,
+        price: vehicleData.price,
+        hasOffer: vehicleData.hasOffer,
+        offerPrice: vehicleData.offerPrice,
+        adminStatus: vehicleData.adminStatus,
+        inMaintenance: vehicleData.inMaintenance,
+        entryDate: vehicleData.entryDate,
+        concesionarioId: vehicleData.concesionarioId,
+        dealerId: dealerId, // Add dealerId for multi-tenant support
+      });
+
+      // Process images and prepare data in parallel
+      const [vehicleInsertData, imageUrls] = await Promise.all([
+        prepareVehicleData(),
+        // Upload images if any are provided (optimized with Promise.all)
+        (async (): Promise<string[]> => {
+          if (!vehicleData.images || vehicleData.images.length === 0) {
+            return [];
+          }
+
+          console.log(
+            `Converting and uploading ${vehicleData.images.length} images...`
+          );
+
+          // Convert base64 images to File objects in parallel
+          const fileConversionPromises = vehicleData.images.map(
+            async (imageData, index) => {
+              try {
+                // Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
+                const base64Data = imageData.data.includes(",")
+                  ? imageData.data.split(",")[1]
+                  : imageData.data;
+
+                // Convert base64 to Uint8Array (this is CPU intensive, so we parallelize it)
+                const byteArray = Uint8Array.from(atob(base64Data), (c) =>
+                  c.charCodeAt(0)
+                );
+
+                // Create File object
+                const file = new File([byteArray], imageData.name, {
+                  type: imageData.type,
+                });
+
+                return file;
+              } catch (error) {
+                console.error(
+                  `Error converting image ${index + 1} (${imageData.name}):`,
+                  error
+                );
+                throw new Error(`Error procesando imagen ${imageData.name}`);
+              }
+            }
+          );
+
+          // Wait for all file conversions to complete in parallel
+          const fileObjects = await Promise.all(fileConversionPromises);
+          console.log(
+            `Successfully converted ${fileObjects.length} images to File objects`
+          );
+
+          // Upload all files in parallel
+          const urls = await uploadVehicleImages(fileObjects);
+          console.log(`Successfully uploaded ${urls.length} images`);
+          return urls;
+        })(),
+      ]);
+
+      // Insert vehicle with uploaded image URLs
       const insertedVehicles = await db
         .insert(schema.vehicles)
         .values({
-          brand: vehicleData.brand,
-          model: vehicleData.model,
-          year: vehicleData.year,
-          trim: vehicleData.trim,
-          vehicleType: vehicleData.vehicleType,
-          color: vehicleData.color,
-          status: vehicleData.status,
-          condition: vehicleData.condition,
-          images: vehicleData.images,
-          description: vehicleData.description,
-          transmission: vehicleData.transmission,
-          fuelType: vehicleData.fuelType,
-          engineSize: vehicleData.engineSize,
-          plate: vehicleData.plate,
-          vin: vehicleData.vin,
-          mileage: vehicleData.mileage,
-          doors: vehicleData.doors,
-          seats: vehicleData.seats,
-          price: vehicleData.price,
-          hasOffer: vehicleData.hasOffer,
-          offerPrice: vehicleData.offerPrice,
-          adminStatus: vehicleData.adminStatus,
-          inMaintenance: vehicleData.inMaintenance,
-          entryDate: vehicleData.entryDate,
-          concesionarioId: vehicleData.concesionarioId,
-          dealerId: dealerId, // Add dealerId for multi-tenant support
+          ...vehicleInsertData,
+          images: imageUrls, // Use uploaded image URLs
         })
         .returning();
 
@@ -1054,6 +1224,11 @@ export const fetchVehicleById = createServerFn({
           dealerId: true,
           entryDate: true,
           images: true,
+          vehicleType: true,
+          hasOffer: true,
+          offerPrice: true,
+          adminStatus: true,
+          inMaintenance: true,
         },
         with: {
           concesionario: {
@@ -1136,6 +1311,7 @@ export type CreateClientInput = z.infer<typeof clientInsertSchema>;
 export type CreateContractInput = z.infer<typeof contractInsertSchema>;
 export type CreateInsuranceInput = z.infer<typeof insuranceInsertSchema>;
 export type CreateVehicleInput = z.infer<typeof vehicleInsertSchema>;
+export type CreateVehicleFormInput = z.infer<typeof vehicleFormInputSchema>;
 export type UpdateVehicleInput = z.infer<
   typeof vehicleUpdateSchema
 >["updateData"];
