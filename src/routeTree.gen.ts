@@ -18,19 +18,20 @@ import { Route as AuthedImport } from './routes/_authed'
 import { Route as AuthedIndexImport } from './routes/_authed/index'
 import { Route as AuthForgotPasswordImport } from './routes/auth/forgot-password'
 import { Route as AuthedSettingsImport } from './routes/_authed/settings'
-import { Route as AuthedConsignmentsImport } from './routes/_authed/consignments'
 import { Route as AuthedCalendarImport } from './routes/_authed/calendar'
 import { Route as AuthedVehiclesIndexImport } from './routes/_authed/vehicles/index'
 import { Route as AuthedInsuranceIndexImport } from './routes/_authed/insurance/index'
 import { Route as AuthedContractsIndexImport } from './routes/_authed/contracts/index'
+import { Route as AuthedConsignmentsIndexImport } from './routes/_authed/consignments/index'
 import { Route as AuthedClientsIndexImport } from './routes/_authed/clients/index'
 import { Route as AuthedVehiclesRegisterImport } from './routes/_authed/vehicles/register'
 import { Route as AuthedInsuranceNewImport } from './routes/_authed/insurance/new'
 import { Route as AuthedContractsNewImport } from './routes/_authed/contracts/new'
+import { Route as AuthedConsignmentsNewImport } from './routes/_authed/consignments/new'
+import { Route as AuthedConsignmentsConcesionarioIdImport } from './routes/_authed/consignments/$concesionarioId'
 import { Route as AuthedClientsNewImport } from './routes/_authed/clients/new'
 import { Route as AuthedClientsPurchasedByIdImport } from './routes/_authed/clients/$purchasedById'
 import { Route as AuthedClientsClientIdImport } from './routes/_authed/clients/$clientId'
-import { Route as AuthedAdminConsignmentsImport } from './routes/_authed/admin/consignments'
 import { Route as AuthedVehiclesVehicleIdIndexImport } from './routes/_authed/vehicles/$vehicleId/index'
 import { Route as AuthedInsuranceInsuranceIdIndexImport } from './routes/_authed/insurance/$insuranceId/index'
 import { Route as AuthedContractsContractIdIndexImport } from './routes/_authed/contracts/$contractId/index'
@@ -81,12 +82,6 @@ const AuthedSettingsRoute = AuthedSettingsImport.update({
   getParentRoute: () => AuthedRoute,
 } as any)
 
-const AuthedConsignmentsRoute = AuthedConsignmentsImport.update({
-  id: '/consignments',
-  path: '/consignments',
-  getParentRoute: () => AuthedRoute,
-} as any)
-
 const AuthedCalendarRoute = AuthedCalendarImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -108,6 +103,12 @@ const AuthedInsuranceIndexRoute = AuthedInsuranceIndexImport.update({
 const AuthedContractsIndexRoute = AuthedContractsIndexImport.update({
   id: '/contracts/',
   path: '/contracts/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+
+const AuthedConsignmentsIndexRoute = AuthedConsignmentsIndexImport.update({
+  id: '/consignments/',
+  path: '/consignments/',
   getParentRoute: () => AuthedRoute,
 } as any)
 
@@ -135,6 +136,19 @@ const AuthedContractsNewRoute = AuthedContractsNewImport.update({
   getParentRoute: () => AuthedRoute,
 } as any)
 
+const AuthedConsignmentsNewRoute = AuthedConsignmentsNewImport.update({
+  id: '/consignments/new',
+  path: '/consignments/new',
+  getParentRoute: () => AuthedRoute,
+} as any)
+
+const AuthedConsignmentsConcesionarioIdRoute =
+  AuthedConsignmentsConcesionarioIdImport.update({
+    id: '/consignments/$concesionarioId',
+    path: '/consignments/$concesionarioId',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+
 const AuthedClientsNewRoute = AuthedClientsNewImport.update({
   id: '/clients/new',
   path: '/clients/new',
@@ -152,12 +166,6 @@ const AuthedClientsPurchasedByIdRoute = AuthedClientsPurchasedByIdImport.update(
 const AuthedClientsClientIdRoute = AuthedClientsClientIdImport.update({
   id: '/clients/$clientId',
   path: '/clients/$clientId',
-  getParentRoute: () => AuthedRoute,
-} as any)
-
-const AuthedAdminConsignmentsRoute = AuthedAdminConsignmentsImport.update({
-  id: '/admin/consignments',
-  path: '/admin/consignments',
   getParentRoute: () => AuthedRoute,
 } as any)
 
@@ -242,13 +250,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedCalendarImport
       parentRoute: typeof AuthedImport
     }
-    '/_authed/consignments': {
-      id: '/_authed/consignments'
-      path: '/consignments'
-      fullPath: '/consignments'
-      preLoaderRoute: typeof AuthedConsignmentsImport
-      parentRoute: typeof AuthedImport
-    }
     '/_authed/settings': {
       id: '/_authed/settings'
       path: '/settings'
@@ -270,13 +271,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIndexImport
       parentRoute: typeof AuthedImport
     }
-    '/_authed/admin/consignments': {
-      id: '/_authed/admin/consignments'
-      path: '/admin/consignments'
-      fullPath: '/admin/consignments'
-      preLoaderRoute: typeof AuthedAdminConsignmentsImport
-      parentRoute: typeof AuthedImport
-    }
     '/_authed/clients/$clientId': {
       id: '/_authed/clients/$clientId'
       path: '/clients/$clientId'
@@ -296,6 +290,20 @@ declare module '@tanstack/react-router' {
       path: '/clients/new'
       fullPath: '/clients/new'
       preLoaderRoute: typeof AuthedClientsNewImport
+      parentRoute: typeof AuthedImport
+    }
+    '/_authed/consignments/$concesionarioId': {
+      id: '/_authed/consignments/$concesionarioId'
+      path: '/consignments/$concesionarioId'
+      fullPath: '/consignments/$concesionarioId'
+      preLoaderRoute: typeof AuthedConsignmentsConcesionarioIdImport
+      parentRoute: typeof AuthedImport
+    }
+    '/_authed/consignments/new': {
+      id: '/_authed/consignments/new'
+      path: '/consignments/new'
+      fullPath: '/consignments/new'
+      preLoaderRoute: typeof AuthedConsignmentsNewImport
       parentRoute: typeof AuthedImport
     }
     '/_authed/contracts/new': {
@@ -324,6 +332,13 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof AuthedClientsIndexImport
+      parentRoute: typeof AuthedImport
+    }
+    '/_authed/consignments/': {
+      id: '/_authed/consignments/'
+      path: '/consignments'
+      fullPath: '/consignments'
+      preLoaderRoute: typeof AuthedConsignmentsIndexImport
       parentRoute: typeof AuthedImport
     }
     '/_authed/contracts/': {
@@ -396,17 +411,18 @@ declare module '@tanstack/react-router' {
 
 interface AuthedRouteChildren {
   AuthedCalendarRoute: typeof AuthedCalendarRoute
-  AuthedConsignmentsRoute: typeof AuthedConsignmentsRoute
   AuthedSettingsRoute: typeof AuthedSettingsRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
-  AuthedAdminConsignmentsRoute: typeof AuthedAdminConsignmentsRoute
   AuthedClientsClientIdRoute: typeof AuthedClientsClientIdRoute
   AuthedClientsPurchasedByIdRoute: typeof AuthedClientsPurchasedByIdRoute
   AuthedClientsNewRoute: typeof AuthedClientsNewRoute
+  AuthedConsignmentsConcesionarioIdRoute: typeof AuthedConsignmentsConcesionarioIdRoute
+  AuthedConsignmentsNewRoute: typeof AuthedConsignmentsNewRoute
   AuthedContractsNewRoute: typeof AuthedContractsNewRoute
   AuthedInsuranceNewRoute: typeof AuthedInsuranceNewRoute
   AuthedVehiclesRegisterRoute: typeof AuthedVehiclesRegisterRoute
   AuthedClientsIndexRoute: typeof AuthedClientsIndexRoute
+  AuthedConsignmentsIndexRoute: typeof AuthedConsignmentsIndexRoute
   AuthedContractsIndexRoute: typeof AuthedContractsIndexRoute
   AuthedInsuranceIndexRoute: typeof AuthedInsuranceIndexRoute
   AuthedVehiclesIndexRoute: typeof AuthedVehiclesIndexRoute
@@ -420,17 +436,19 @@ interface AuthedRouteChildren {
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedCalendarRoute: AuthedCalendarRoute,
-  AuthedConsignmentsRoute: AuthedConsignmentsRoute,
   AuthedSettingsRoute: AuthedSettingsRoute,
   AuthedIndexRoute: AuthedIndexRoute,
-  AuthedAdminConsignmentsRoute: AuthedAdminConsignmentsRoute,
   AuthedClientsClientIdRoute: AuthedClientsClientIdRoute,
   AuthedClientsPurchasedByIdRoute: AuthedClientsPurchasedByIdRoute,
   AuthedClientsNewRoute: AuthedClientsNewRoute,
+  AuthedConsignmentsConcesionarioIdRoute:
+    AuthedConsignmentsConcesionarioIdRoute,
+  AuthedConsignmentsNewRoute: AuthedConsignmentsNewRoute,
   AuthedContractsNewRoute: AuthedContractsNewRoute,
   AuthedInsuranceNewRoute: AuthedInsuranceNewRoute,
   AuthedVehiclesRegisterRoute: AuthedVehiclesRegisterRoute,
   AuthedClientsIndexRoute: AuthedClientsIndexRoute,
+  AuthedConsignmentsIndexRoute: AuthedConsignmentsIndexRoute,
   AuthedContractsIndexRoute: AuthedContractsIndexRoute,
   AuthedInsuranceIndexRoute: AuthedInsuranceIndexRoute,
   AuthedVehiclesIndexRoute: AuthedVehiclesIndexRoute,
@@ -451,18 +469,19 @@ export interface FileRoutesByFullPath {
   '/logout': typeof LogoutRoute
   '/signup': typeof SignupRoute
   '/calendar': typeof AuthedCalendarRoute
-  '/consignments': typeof AuthedConsignmentsRoute
   '/settings': typeof AuthedSettingsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/': typeof AuthedIndexRoute
-  '/admin/consignments': typeof AuthedAdminConsignmentsRoute
   '/clients/$clientId': typeof AuthedClientsClientIdRoute
   '/clients/$purchasedById': typeof AuthedClientsPurchasedByIdRoute
   '/clients/new': typeof AuthedClientsNewRoute
+  '/consignments/$concesionarioId': typeof AuthedConsignmentsConcesionarioIdRoute
+  '/consignments/new': typeof AuthedConsignmentsNewRoute
   '/contracts/new': typeof AuthedContractsNewRoute
   '/insurance/new': typeof AuthedInsuranceNewRoute
   '/vehicles/register': typeof AuthedVehiclesRegisterRoute
   '/clients': typeof AuthedClientsIndexRoute
+  '/consignments': typeof AuthedConsignmentsIndexRoute
   '/contracts': typeof AuthedContractsIndexRoute
   '/insurance': typeof AuthedInsuranceIndexRoute
   '/vehicles': typeof AuthedVehiclesIndexRoute
@@ -479,18 +498,19 @@ export interface FileRoutesByTo {
   '/logout': typeof LogoutRoute
   '/signup': typeof SignupRoute
   '/calendar': typeof AuthedCalendarRoute
-  '/consignments': typeof AuthedConsignmentsRoute
   '/settings': typeof AuthedSettingsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/': typeof AuthedIndexRoute
-  '/admin/consignments': typeof AuthedAdminConsignmentsRoute
   '/clients/$clientId': typeof AuthedClientsClientIdRoute
   '/clients/$purchasedById': typeof AuthedClientsPurchasedByIdRoute
   '/clients/new': typeof AuthedClientsNewRoute
+  '/consignments/$concesionarioId': typeof AuthedConsignmentsConcesionarioIdRoute
+  '/consignments/new': typeof AuthedConsignmentsNewRoute
   '/contracts/new': typeof AuthedContractsNewRoute
   '/insurance/new': typeof AuthedInsuranceNewRoute
   '/vehicles/register': typeof AuthedVehiclesRegisterRoute
   '/clients': typeof AuthedClientsIndexRoute
+  '/consignments': typeof AuthedConsignmentsIndexRoute
   '/contracts': typeof AuthedContractsIndexRoute
   '/insurance': typeof AuthedInsuranceIndexRoute
   '/vehicles': typeof AuthedVehiclesIndexRoute
@@ -509,18 +529,19 @@ export interface FileRoutesById {
   '/logout': typeof LogoutRoute
   '/signup': typeof SignupRoute
   '/_authed/calendar': typeof AuthedCalendarRoute
-  '/_authed/consignments': typeof AuthedConsignmentsRoute
   '/_authed/settings': typeof AuthedSettingsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/_authed/': typeof AuthedIndexRoute
-  '/_authed/admin/consignments': typeof AuthedAdminConsignmentsRoute
   '/_authed/clients/$clientId': typeof AuthedClientsClientIdRoute
   '/_authed/clients/$purchasedById': typeof AuthedClientsPurchasedByIdRoute
   '/_authed/clients/new': typeof AuthedClientsNewRoute
+  '/_authed/consignments/$concesionarioId': typeof AuthedConsignmentsConcesionarioIdRoute
+  '/_authed/consignments/new': typeof AuthedConsignmentsNewRoute
   '/_authed/contracts/new': typeof AuthedContractsNewRoute
   '/_authed/insurance/new': typeof AuthedInsuranceNewRoute
   '/_authed/vehicles/register': typeof AuthedVehiclesRegisterRoute
   '/_authed/clients/': typeof AuthedClientsIndexRoute
+  '/_authed/consignments/': typeof AuthedConsignmentsIndexRoute
   '/_authed/contracts/': typeof AuthedContractsIndexRoute
   '/_authed/insurance/': typeof AuthedInsuranceIndexRoute
   '/_authed/vehicles/': typeof AuthedVehiclesIndexRoute
@@ -540,18 +561,19 @@ export interface FileRouteTypes {
     | '/logout'
     | '/signup'
     | '/calendar'
-    | '/consignments'
     | '/settings'
     | '/auth/forgot-password'
     | '/'
-    | '/admin/consignments'
     | '/clients/$clientId'
     | '/clients/$purchasedById'
     | '/clients/new'
+    | '/consignments/$concesionarioId'
+    | '/consignments/new'
     | '/contracts/new'
     | '/insurance/new'
     | '/vehicles/register'
     | '/clients'
+    | '/consignments'
     | '/contracts'
     | '/insurance'
     | '/vehicles'
@@ -567,18 +589,19 @@ export interface FileRouteTypes {
     | '/logout'
     | '/signup'
     | '/calendar'
-    | '/consignments'
     | '/settings'
     | '/auth/forgot-password'
     | '/'
-    | '/admin/consignments'
     | '/clients/$clientId'
     | '/clients/$purchasedById'
     | '/clients/new'
+    | '/consignments/$concesionarioId'
+    | '/consignments/new'
     | '/contracts/new'
     | '/insurance/new'
     | '/vehicles/register'
     | '/clients'
+    | '/consignments'
     | '/contracts'
     | '/insurance'
     | '/vehicles'
@@ -595,18 +618,19 @@ export interface FileRouteTypes {
     | '/logout'
     | '/signup'
     | '/_authed/calendar'
-    | '/_authed/consignments'
     | '/_authed/settings'
     | '/auth/forgot-password'
     | '/_authed/'
-    | '/_authed/admin/consignments'
     | '/_authed/clients/$clientId'
     | '/_authed/clients/$purchasedById'
     | '/_authed/clients/new'
+    | '/_authed/consignments/$concesionarioId'
+    | '/_authed/consignments/new'
     | '/_authed/contracts/new'
     | '/_authed/insurance/new'
     | '/_authed/vehicles/register'
     | '/_authed/clients/'
+    | '/_authed/consignments/'
     | '/_authed/contracts/'
     | '/_authed/insurance/'
     | '/_authed/vehicles/'
@@ -656,17 +680,18 @@ export const routeTree = rootRoute
       "filePath": "_authed.tsx",
       "children": [
         "/_authed/calendar",
-        "/_authed/consignments",
         "/_authed/settings",
         "/_authed/",
-        "/_authed/admin/consignments",
         "/_authed/clients/$clientId",
         "/_authed/clients/$purchasedById",
         "/_authed/clients/new",
+        "/_authed/consignments/$concesionarioId",
+        "/_authed/consignments/new",
         "/_authed/contracts/new",
         "/_authed/insurance/new",
         "/_authed/vehicles/register",
         "/_authed/clients/",
+        "/_authed/consignments/",
         "/_authed/contracts/",
         "/_authed/insurance/",
         "/_authed/vehicles/",
@@ -691,10 +716,6 @@ export const routeTree = rootRoute
       "filePath": "_authed/calendar.tsx",
       "parent": "/_authed"
     },
-    "/_authed/consignments": {
-      "filePath": "_authed/consignments.tsx",
-      "parent": "/_authed"
-    },
     "/_authed/settings": {
       "filePath": "_authed/settings.tsx",
       "parent": "/_authed"
@@ -704,10 +725,6 @@ export const routeTree = rootRoute
     },
     "/_authed/": {
       "filePath": "_authed/index.tsx",
-      "parent": "/_authed"
-    },
-    "/_authed/admin/consignments": {
-      "filePath": "_authed/admin/consignments.tsx",
       "parent": "/_authed"
     },
     "/_authed/clients/$clientId": {
@@ -720,6 +737,14 @@ export const routeTree = rootRoute
     },
     "/_authed/clients/new": {
       "filePath": "_authed/clients/new.tsx",
+      "parent": "/_authed"
+    },
+    "/_authed/consignments/$concesionarioId": {
+      "filePath": "_authed/consignments/$concesionarioId.tsx",
+      "parent": "/_authed"
+    },
+    "/_authed/consignments/new": {
+      "filePath": "_authed/consignments/new.tsx",
       "parent": "/_authed"
     },
     "/_authed/contracts/new": {
@@ -736,6 +761,10 @@ export const routeTree = rootRoute
     },
     "/_authed/clients/": {
       "filePath": "_authed/clients/index.tsx",
+      "parent": "/_authed"
+    },
+    "/_authed/consignments/": {
+      "filePath": "_authed/consignments/index.tsx",
       "parent": "/_authed"
     },
     "/_authed/contracts/": {

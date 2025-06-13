@@ -63,6 +63,7 @@ function RegisterVehiclePage() {
       clientId: "",
       clientName: "",
       contractId: "",
+      concesionarioId: "",
     },
     mode: "onChange",
   });
@@ -105,7 +106,7 @@ function RegisterVehiclePage() {
       adminStatus: data.adminStatus || undefined,
       inMaintenance: data.inMaintenance,
       entryDate: data.entryDate || null, // Keep as Date object for API
-      concesionarioId: undefined, // Will be handled in associations step
+      concesionarioId: data.concesionarioId || undefined, // Use actual concesionario from form
     };
 
     // Create the vehicle using the mutation
@@ -113,8 +114,8 @@ function RegisterVehiclePage() {
       onSuccess: (createdVehicle) => {
         // Show success toast
         let toastMessage = "Vehículo registrado exitosamente.";
-        if (data.clientName) {
-          toastMessage += ` Asociado a ${data.clientName}.`;
+        if (data.concesionarioId) {
+          toastMessage += " Asignado al concesionario seleccionado.";
         }
 
         toast({

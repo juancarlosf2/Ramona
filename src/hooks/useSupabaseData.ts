@@ -11,7 +11,9 @@ import {
   fetchContracts,
   fetchDealerInfo,
   fetchConcesionarios,
+  fetchConcesionarioById,
   createClientServer,
+  createConcesionarioServer,
   createContractServer,
   createInsuranceServer,
   createVehicleServer,
@@ -20,10 +22,12 @@ import {
 } from "../server/api";
 import type {
   CreateClientInput,
+  CreateConcesionarioInput,
   CreateContractInput,
   CreateInsuranceInput,
   CreateVehicleFormInput,
   UpdateVehicleInput,
+  ConcesionarioById,
 } from "../server/api";
 
 // Query Keys
@@ -34,6 +38,7 @@ export const QUERY_KEYS = {
   contracts: ["contracts"] as const,
   dealers: ["dealers"] as const,
   concesionarios: ["concesionarios"] as const,
+  concesionario: (id: string) => ["concesionarios", id] as const,
   profile: ["profile"] as const,
 } as const;
 
@@ -48,6 +53,33 @@ export const vehicleByIdQueryOptions = (vehicleId: string) => ({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+/**
+ * Query options for concesionario by ID - used for server prefetching and client queries
+ */
+export const concesionarioByIdQueryOptions = (concesionarioId: string) => ({
+  queryKey: QUERY_KEYS.concesionario(concesionarioId),
+  queryFn: () => fetchConcesionarioById({ data: { concesionarioId } }),
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+/**
+ * Query options for all vehicles - used for server prefetching and client queries
+ */
+export const vehiclesQueryOptions = () => ({
+  queryKey: QUERY_KEYS.vehicles,
+  queryFn: fetchVehicles,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+/**
+ * Query options for all concesionarios - used for server prefetching and client queries
+ */
+export const concesionariosQueryOptions = () => ({
+  queryKey: QUERY_KEYS.concesionarios,
+  queryFn: fetchConcesionarios,
+  staleTime: 10 * 60 * 1000, // 10 minutes
+});
+
 // ===== QUERY HOOKS =====
 
 /**
@@ -55,6 +87,27 @@ export const vehicleByIdQueryOptions = (vehicleId: string) => ({
  */
 export function useSuspenseVehicle(vehicleId: string) {
   return useSuspenseQuery(vehicleByIdQueryOptions(vehicleId));
+}
+
+/**
+ * Fetch single concesionario by ID with assigned vehicles (suspense version for loaders)
+ */
+export function useSuspenseConcesionario(concesionarioId: string) {
+  return useSuspenseQuery(concesionarioByIdQueryOptions(concesionarioId));
+}
+
+/**
+ * Fetch all vehicles with their related data (suspense version for loaders)
+ */
+export function useSuspenseVehicles() {
+  return useSuspenseQuery(vehiclesQueryOptions());
+}
+
+/**
+ * Fetch all concesionarios (suspense version for loaders)
+ */
+export function useSuspenseConcesionarios() {
+  return useSuspenseQuery(concesionariosQueryOptions());
 }
 
 /**
@@ -241,6 +294,25 @@ export function useCreateVehicle() {
     },
     onError: (error) => {
       console.error("Error creating vehicle:", error);
+    },
+  });
+}
+
+/**
+ * Create a new concesionario
+ */
+export function useCreateConcesionario() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateConcesionarioInput) =>
+      createConcesionarioServer({ data }),
+    onSuccess: () => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.concesionarios });
+    },
+    onError: (error) => {
+      console.error("Error creating concesionario:", error);
     },
   });
 }

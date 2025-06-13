@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  useVehicles,
-  useConcesionarios,
+  useSuspenseVehicles,
+  useSuspenseConcesionarios,
   useUpdateVehicle,
-  useIsAdmin,
   getErrorMessage,
+  vehiclesQueryOptions,
+  concesionariosQueryOptions,
 } from "~/hooks/useSupabaseData";
 import {
   Card,
@@ -42,6 +43,12 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  PlusCircle,
+  ArrowRight,
+  Phone,
+  Mail,
+  MapPin,
+  User,
 } from "lucide-react";
 import { formatCurrency } from "~/lib/utils";
 import { toast } from "~/hooks/use-toast";
@@ -57,7 +64,19 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/_authed/admin/consignments")({
+export const Route = createFileRoute("/_authed/consignments/")({
+  loader: async ({ context }) => {
+    // Check admin access on server
+
+    // Prefetch data on server
+    const queryClient = (context as any).queryClient;
+    if (queryClient) {
+      await Promise.all([
+        queryClient.ensureQueryData(vehiclesQueryOptions()),
+        queryClient.ensureQueryData(concesionariosQueryOptions()),
+      ]);
+    }
+  },
   component: ConsignmentManagementPage,
 });
 
@@ -66,21 +85,9 @@ export default function ConsignmentManagementPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [assignmentFilter, setAssignmentFilter] = useState<string>("all");
 
-  // Check if user is admin
-  const isAdmin = useIsAdmin();
-
-  // Fetch data
-  const {
-    data: vehicles = [],
-    isLoading: isLoadingVehicles,
-    error: vehiclesError,
-  } = useVehicles();
-
-  const {
-    data: concesionarios = [],
-    isLoading: isLoadingConcesionarios,
-    error: concesionariosError,
-  } = useConcesionarios();
+  // Use suspense queries - data is already loaded by the loader
+  const { data: vehicles = [] } = useSuspenseVehicles();
+  const { data: concesionarios = [] } = useSuspenseConcesionarios();
 
   // Mutation for updating vehicle assignments
   const updateVehicleMutation = useUpdateVehicle();
@@ -92,8 +99,8 @@ export default function ConsignmentManagementPage() {
   ) => {
     try {
       await updateVehicleMutation.mutateAsync({
-        id: vehicleId,
-        data: { concesionarioId },
+        vehicleId: vehicleId,
+        updateData: { concesionarioId },
       });
 
       const assignmentText = concesionarioId
@@ -132,20 +139,6 @@ export default function ConsignmentManagementPage() {
     return matchesSearch && matchesStatus && matchesAssignment;
   });
 
-  // Show unauthorized message if not admin
-  if (!isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <AlertTriangle className="h-16 w-16 text-destructive" />
-        <h2 className="text-2xl font-bold">Acceso Denegado</h2>
-        <p className="text-muted-foreground text-center max-w-md">
-          No tienes permisos para acceder a la gestión de consignaciones. Esta
-          sección está reservada para administradores.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
@@ -157,6 +150,12 @@ export default function ConsignmentManagementPage() {
             Administra la asignación de vehículos a concesionarios
           </p>
         </div>
+        <Button asChild>
+          <Link to="/consignments/new">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Agregar Concesionario
+          </Link>
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -270,20 +269,7 @@ export default function ConsignmentManagementPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoadingVehicles || isLoadingConcesionarios ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              Cargando vehículos...
-            </div>
-          ) : vehiclesError || concesionariosError ? (
-            <div className="text-center py-8 text-destructive">
-              <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-              <p>
-                Error al cargar datos:{" "}
-                {getErrorMessage(vehiclesError || concesionariosError)}
-              </p>
-            </div>
-          ) : filteredVehicles.length === 0 ? (
+          {filteredVehicles.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Car className="h-8 w-8 mx-auto mb-2" />
               <p>No se encontraron vehículos con los filtros aplicados</p>
@@ -319,7 +305,9 @@ export default function ConsignmentManagementPage() {
                         {vehicle.vin}
                       </TableCell>
                       <TableCell>{vehicle.plate || "N/A"}</TableCell>
-                      <TableCell>{formatCurrency(vehicle.price)}</TableCell>
+                      <TableCell>
+                        {formatCurrency(Number(vehicle.price))}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -403,6 +391,95 @@ export default function ConsignmentManagementPage() {
         </CardContent>
       </Card>
 
+      {/* Concesionarios List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Concesionarios ({concesionarios.length})</CardTitle>
+          <CardDescription>
+            Lista de todos los concesionarios registrados en el sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {concesionarios.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Building2 className="h-8 w-8 mx-auto mb-2" />
+              <p>No hay concesionarios registrados</p>
+              <p className="text-sm">
+                Usa el botón "Agregar Concesionario" para crear uno nuevo
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {concesionarios.map((concesionario) => (
+                <Link
+                  key={concesionario.id}
+                  to="/consignments/$concesionarioId"
+                  params={{ concesionarioId: concesionario.id }}
+                >
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-blue-100 p-2 rounded-lg">
+                            <Building2 className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-semibold">
+                              {concesionario.name}
+                            </CardTitle>
+                            {concesionario.contactName && (
+                              <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <User className="h-3.5 w-3.5 mr-1.5" />
+                                {concesionario.contactName}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {concesionario.phone && (
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5 mr-2" />
+                          {concesionario.phone}
+                        </div>
+                      )}
+                      {concesionario.email && (
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Mail className="h-3.5 w-3.5 mr-2" />
+                          {concesionario.email}
+                        </div>
+                      )}
+                      {concesionario.address && (
+                        <div className="flex items-start text-sm text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="line-clamp-2">
+                            {concesionario.address}
+                          </span>
+                        </div>
+                      )}
+                      <div className="pt-2">
+                        <div className="text-xs text-muted-foreground">
+                          Vehículos asignados:{" "}
+                          <span className="font-medium text-foreground">
+                            {
+                              vehicles.filter(
+                                (v) => v.concesionarioId === concesionario.id
+                              ).length
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -439,8 +516,8 @@ export default function ConsignmentManagementPage() {
                         await Promise.all(
                           assignedVehicles.map((vehicle) =>
                             updateVehicleMutation.mutateAsync({
-                              id: vehicle.id,
-                              data: { concesionarioId: null },
+                              vehicleId: vehicle.id,
+                              updateData: { concesionarioId: null },
                             })
                           )
                         );

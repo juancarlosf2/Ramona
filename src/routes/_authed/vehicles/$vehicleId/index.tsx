@@ -739,6 +739,31 @@ export default function VehicleDetailPage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Concesionario Card - Only show if vehicle has one assigned */}
+                {vehicle.concesionario && (
+                  <Card className="bg-blue-50 border-blue-200 hover:bg-blue-100 transition-colors duration-200">
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <Briefcase className="h-4 w-4 text-blue-600" />
+                      <div className="flex-grow">
+                        <p className="text-sm text-blue-600/80">
+                          Concesionario
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-blue-800">
+                            {vehicle.concesionario.name}
+                          </span>
+                        </div>
+                      </div>
+                      <Link
+                        to="/consignments"
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
 

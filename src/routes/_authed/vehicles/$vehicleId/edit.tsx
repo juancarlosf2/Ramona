@@ -8,12 +8,16 @@ import { VehicleFinancialForm } from "~/components/vehicles/vehicle-financial-fo
 import { VehicleAssociationsForm } from "~/components/vehicles/vehicle-associations-form";
 import { useToast } from "~/hooks/use-toast";
 import { Car, Wrench, DollarSign, Users } from "lucide-react";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import {
   vehicleFormSchema,
   type VehicleFormValues,
 } from "~/components/vehicles/new-vehicle-schema";
 import { parseCurrency } from "~/lib/utils";
+import {
+  useSuspenseVehicle,
+  vehicleByIdQueryOptions,
+} from "~/hooks/useSupabaseData";
 
 // Sample vehicle data for editing
 const vehicleData = {
@@ -52,11 +56,26 @@ const vehicleData = {
 
 export const Route = createFileRoute("/_authed/vehicles/$vehicleId/edit")({
   component: EditVehiclePage,
+  loader: async ({ context, params: { vehicleId } }) => {
+    // Skip data loading if this is the "new" route
+    if (vehicleId === "new") {
+      throw redirect({ to: "/vehicles/register", replace: true });
+    }
+
+    // Use queryClient.ensureQueryData to prefetch vehicle data on the server
+    // The queryClient is available through the router context via routerWithQueryClient
+    const queryClient = (context as any).queryClient;
+    if (queryClient) {
+      await queryClient.ensureQueryData(vehicleByIdQueryOptions(vehicleId));
+    }
+  },
 });
 
 export default function EditVehiclePage() {
   const router = useRouter();
   const { vehicleId: id } = Route.useParams();
+
+  const { data: vehicle } = useSuspenseVehicle(id);
 
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
@@ -66,36 +85,36 @@ export default function EditVehiclePage() {
   const form = useForm<VehicleFormValues>({
     resolver: standardSchemaResolver(vehicleFormSchema),
     defaultValues: {
-      brand: "",
-      model: "",
-      year: new Date().getFullYear(),
-      trim: "",
-      vehicleType: "",
-      color: "",
-      status: "available",
-      condition: "new",
-      images: [],
-      description: "",
+      brand: vehicle.brand,
+      model: vehicle.model,
+      year: vehicle.year,
+      trim: vehicle.trim ?? "",
+      vehicleType: vehicle.vehicleType,
+      color: vehicle.color,
+      status: vehicle.status,
+      condition: vehicle.condition,
+      images: vehicle.images,
+      description: vehicle.description ?? "",
 
-      transmission: "",
-      fuelType: "",
-      engineSize: "",
-      plate: "",
-      vin: "",
-      mileage: 0,
-      doors: 4,
-      seats: 5,
+      transmission: vehicle.transmission ?? "",
+      fuelType: vehicle.fuelType ?? "",
+      engineSize: vehicle.engineSize ?? "",
+      plate: vehicle.plate ?? "",
+      vin: vehicle.vin ?? "",
+      mileage: vehicle.mileage ?? 0,
+      doors: vehicle.doors ?? 4,
+      seats: vehicle.seats ?? 5,
 
-      price: "",
-      hasOffer: false,
-      offerPrice: "",
-      adminStatus: "",
-      inMaintenance: false,
-      entryDate: new Date().toISOString(),
+      price: vehicle.price ?? "",
+      hasOffer: vehicle.hasOffer ?? false,
+      offerPrice: vehicle.offerPrice ?? "",
+      adminStatus: vehicle.adminStatus ?? "",
+      inMaintenance: vehicle.inMaintenance ?? false,
+      entryDate: vehicle.entryDate ?? new Date().toISOString(),
 
-      clientId: "",
-      clientName: "",
-      contractId: "",
+      // clientId: vehicle.client.id ?? '',
+      // clientName: vehicle.clientName ?? '',
+      contractId: vehicle.contracts?.[0]?.id ?? "",
     },
     mode: "onChange",
   });

@@ -46,6 +46,7 @@ export const vehicleFormSchema = z.object({
   clientId: z.string().optional(),
   clientName: z.string().optional(),
   contractId: z.string().optional(),
+  concesionarioId: z.string().optional(),
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
