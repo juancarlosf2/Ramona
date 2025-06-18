@@ -23,7 +23,10 @@ export const vehicleFormSchema = z.object({
   transmission: z.string().min(1, { error: "La transmisión es requerida" }),
   fuelType: z.string().min(1, { error: "El tipo de combustible es requerido" }),
   engineSize: z.string().min(1, { error: "El tamaño del motor es requerido" }),
-  plate: z.string().optional(),
+  plate: z
+    .string()
+    .max(10, { error: "La placa no puede exceder 10 caracteres" })
+    .optional(),
   vin: z
     .string()
     .min(17, { error: "El VIN debe tener 17 caracteres" })

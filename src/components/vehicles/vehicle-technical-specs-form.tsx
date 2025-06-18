@@ -205,6 +205,7 @@ export function VehicleTechnicalSpecsForm({
                     const formatted = formatPlate(e.target.value);
                     field.onChange(formatted);
                   }}
+                  maxLength={10}
                 />
               </FormControl>
               <FormMessage />

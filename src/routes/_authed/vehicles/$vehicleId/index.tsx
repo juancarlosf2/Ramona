@@ -756,7 +756,10 @@ export default function VehicleDetailPage() {
                         </div>
                       </div>
                       <Link
-                        to="/consignments"
+                        to="/consignments/$concesionarioId"
+                        params={{
+                          concesionarioId: vehicle.concesionario.id,
+                        }}
                         className="text-blue-600 hover:text-blue-800 transition-colors"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />

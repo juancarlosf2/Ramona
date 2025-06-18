@@ -291,6 +291,7 @@ export const vehicleInsertSchema = z.object({
   engineSize: z.string().min(1, "El tamaño del motor es requerido").trim(),
   plate: z
     .string()
+    .max(10, "La placa no puede exceder 10 caracteres")
     .optional()
     .nullable()
     .transform((p) => (p === "" ? null : p)),
@@ -399,6 +400,7 @@ export const vehicleFormInputSchema = z.object({
   engineSize: z.string().min(1, "El tamaño del motor es requerido").trim(),
   plate: z
     .string()
+    .max(10, "La placa no puede exceder 10 caracteres")
     .optional()
     .nullable()
     .transform((p) => (p === "" ? null : p)),
