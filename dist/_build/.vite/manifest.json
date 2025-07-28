@@ -1,0 +1,207 @@
+{
+  "/Users/sonofzeus/Documents/Programming/Ramona/src/styles/app.css": {
+    "file": "assets/app-DsZilJh9.css",
+    "src": "/Users/sonofzeus/Documents/Programming/Ramona/src/styles/app.css"
+  },
+  "_Auth-DCmwj8l0.js": {
+    "file": "assets/Auth-DCmwj8l0.js",
+    "name": "Auth",
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "_client-D0JzVCqi.js": {
+    "file": "assets/client-D0JzVCqi.js",
+    "name": "client",
+    "dynamicImports": [
+      "src/routes/signup.tsx?tsr-split=component",
+      "src/routes/_authed.tsx?tsr-split=errorComponent",
+      "src/routes/auth/forgot-password.tsx?tsr-split=component",
+      "src/server/vehicles.ts",
+      "src/server/concesionarios.ts",
+      "src/server/vehicles.ts",
+      "src/server/concesionarios.ts",
+      "src/server/vehicles.ts",
+      "src/server/concesionarios.ts",
+      "src/server/clients.ts",
+      "src/server/vehicles.ts",
+      "src/server/concesionarios.ts",
+      "src/server/vehicles.ts",
+      "src/server/concesionarios.ts",
+      "src/server/clients.ts",
+      "src/server/contracts.ts",
+      "src/server/vehicles.ts",
+      "src/server/concesionarios.ts",
+      "src/server/vehicles.ts",
+      "src/server/vehicles.ts",
+      "src/routes/_authed/vehicles/register.tsx?tsr-split=component",
+      "src/routes/_authed/consignments/new.tsx?tsr-split=component",
+      "src/routes/_authed/clients/$purchasedById.tsx?tsr-split=component",
+      "src/routes/_authed/insurance/$insuranceId/index.tsx?tsr-split=component",
+      "src/routes/_authed/contracts/$contractId/index.tsx?tsr-split=component",
+      "src/routes/_authed/insurance/$insuranceId/edit.tsx?tsr-split=component",
+      "src/routes/_authed/contracts/$contractId/edit.tsx?tsr-split=component"
+    ],
+    "assets": [
+      "assets/testimonial-1-Cu5RBjwy.png",
+      "assets/classic-red-convertible-MA4y-Sob.png",
+      "assets/modern-family-suv-aEYCWHNP.png",
+      "assets/app-DsZilJh9.css"
+    ]
+  },
+  "_utils-8e6BCVt_.js": {
+    "file": "assets/utils-8e6BCVt_.js",
+    "name": "utils"
+  },
+  "src/public/classic-red-convertible.png": {
+    "file": "assets/classic-red-convertible-MA4y-Sob.png",
+    "src": "src/public/classic-red-convertible.png"
+  },
+  "src/public/modern-family-suv.png": {
+    "file": "assets/modern-family-suv-aEYCWHNP.png",
+    "src": "src/public/modern-family-suv.png"
+  },
+  "src/public/testimonial-1.png": {
+    "file": "assets/testimonial-1-Cu5RBjwy.png",
+    "src": "src/public/testimonial-1.png"
+  },
+  "src/routes/_authed.tsx?tsr-split=errorComponent": {
+    "file": "assets/_authed-Ce2DO1l0.js",
+    "name": "_authed",
+    "src": "src/routes/_authed.tsx?tsr-split=errorComponent",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js",
+      "_Auth-DCmwj8l0.js"
+    ]
+  },
+  "src/routes/_authed/clients/$purchasedById.tsx?tsr-split=component": {
+    "file": "assets/_purchasedById-BmE4i3q_.js",
+    "name": "_purchasedById",
+    "src": "src/routes/_authed/clients/$purchasedById.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/routes/_authed/consignments/new.tsx?tsr-split=component": {
+    "file": "assets/new-S4Jka0sh.js",
+    "name": "new",
+    "src": "src/routes/_authed/consignments/new.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/routes/_authed/contracts/$contractId/edit.tsx?tsr-split=component": {
+    "file": "assets/edit-BjqQDiyi.js",
+    "name": "edit",
+    "src": "src/routes/_authed/contracts/$contractId/edit.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/routes/_authed/contracts/$contractId/index.tsx?tsr-split=component": {
+    "file": "assets/index-B078RMuC.js",
+    "name": "index",
+    "src": "src/routes/_authed/contracts/$contractId/index.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/routes/_authed/insurance/$insuranceId/edit.tsx?tsr-split=component": {
+    "file": "assets/edit-C1sNRFhH.js",
+    "name": "edit",
+    "src": "src/routes/_authed/insurance/$insuranceId/edit.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/routes/_authed/insurance/$insuranceId/index.tsx?tsr-split=component": {
+    "file": "assets/index-BVXTmuUf.js",
+    "name": "index",
+    "src": "src/routes/_authed/insurance/$insuranceId/index.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/routes/_authed/vehicles/register.tsx?tsr-split=component": {
+    "file": "assets/register-BkDmBnVN.js",
+    "name": "register",
+    "src": "src/routes/_authed/vehicles/register.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/routes/auth/forgot-password.tsx?tsr-split=component": {
+    "file": "assets/forgot-password-Ca8ec-lS.js",
+    "name": "forgot-password",
+    "src": "src/routes/auth/forgot-password.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/routes/signup.tsx?tsr-split=component": {
+    "file": "assets/signup-BQBPvp6c.js",
+    "name": "signup",
+    "src": "src/routes/signup.tsx?tsr-split=component",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js",
+      "_Auth-DCmwj8l0.js"
+    ]
+  },
+  "src/server/clients.ts": {
+    "file": "assets/clients-CwxFJeqY.js",
+    "name": "clients",
+    "src": "src/server/clients.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/server/concesionarios.ts": {
+    "file": "assets/concesionarios-C5BdhU7k.js",
+    "name": "concesionarios",
+    "src": "src/server/concesionarios.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/server/contracts.ts": {
+    "file": "assets/contracts-C3bRC6JQ.js",
+    "name": "contracts",
+    "src": "src/server/contracts.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_utils-8e6BCVt_.js",
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "src/server/vehicles.ts": {
+    "file": "assets/vehicles-DPSiLLzu.js",
+    "name": "vehicles",
+    "src": "src/server/vehicles.ts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_utils-8e6BCVt_.js",
+      "_client-D0JzVCqi.js"
+    ]
+  },
+  "virtual:$vinxi/handler/client": {
+    "file": "assets/client-k4A-ISBS.js",
+    "name": "client",
+    "src": "virtual:$vinxi/handler/client",
+    "isEntry": true,
+    "imports": [
+      "_client-D0JzVCqi.js"
+    ]
+  }
+}
