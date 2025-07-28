@@ -1,6 +1,6 @@
 // Type inference from shared types instead of server functions
-export type { Vehicle, VehicleById, VehicleStatus } from './vehicle-types';
-import type { Vehicle } from './vehicle-types';
+export type { Vehicle, VehicleById, VehicleStatus } from "./vehicle-types";
+import type { Vehicle } from "./vehicle-types";
 
 // Utility types for vehicle properties
 export type VehicleCondition = Vehicle["condition"];

@@ -81,7 +81,9 @@ export const useConcesionarioById = (concesionarioId: string) => {
   return useQuery({
     queryKey: QUERY_KEYS.concesionario(concesionarioId),
     queryFn: async () => {
-      const { fetchConcesionarioById } = await import("~/server/concesionarios");
+      const { fetchConcesionarioById } = await import(
+        "~/server/concesionarios"
+      );
       return fetchConcesionarioById({ data: { concesionarioId } });
     },
     enabled: !!concesionarioId,
@@ -203,7 +205,9 @@ export const useConcesionarioSuspense = (concesionarioId: string) => {
   return useSuspenseQuery({
     queryKey: QUERY_KEYS.concesionario(concesionarioId),
     queryFn: async () => {
-      const { fetchConcesionarioById } = await import("~/server/concesionarios");
+      const { fetchConcesionarioById } = await import(
+        "~/server/concesionarios"
+      );
       return fetchConcesionarioById({ data: { concesionarioId } });
     },
   });
@@ -323,7 +327,9 @@ export const useCreateConcesionario = () => {
 
   return useMutation({
     mutationFn: async (data: any) => {
-      const { createConcesionarioServer } = await import("~/server/concesionarios");
+      const { createConcesionarioServer } = await import(
+        "~/server/concesionarios"
+      );
       return createConcesionarioServer({ data });
     },
     onSuccess: () => {
@@ -390,11 +396,11 @@ export const useContractsByClientId = (clientId: string) => {
 
 export const useAvailableVehicles = () => {
   return useQuery({
-    queryKey: [...QUERY_KEYS.vehicles, 'available'],
+    queryKey: [...QUERY_KEYS.vehicles, "available"],
     queryFn: async () => {
       const { fetchVehicles } = await import("~/server/vehicles");
       const vehicles = await fetchVehicles();
-      return vehicles.filter((vehicle: any) => vehicle.status === 'available');
+      return vehicles.filter((vehicle: any) => vehicle.status === "available");
     },
   });
 };
