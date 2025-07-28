@@ -89,7 +89,10 @@
     "uploadthing": "^7.7.2",
     "vaul": "^0.9.6",
     "vinxi": "0.5.3",
-    "zod": "3.25.28"
+    "vite-tsconfig-paths": "^5.1.4",
+    "zod": "3.25.28",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
     "@snaplet/copycat": "^6.0.0",
@@ -98,12 +101,8 @@
     "@types/pg": "^8.11.11",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
-    "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.31.1",
-    "postcss": "^8.5.1",
-    "tailwindcss": "^3.4.17",
     "tsx": "^4.19.4",
-    "typescript": "^5.7.2",
-    "vite-tsconfig-paths": "^5.1.4"
+    "typescript": "^5.7.2"
   }
 }
