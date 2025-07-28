@@ -1,5 +1,5 @@
 import { createUploadthing, type FileRouter } from "uploadthing/server";
-import { getUser } from "~/server/api";
+import { getUser } from "~/server/auth";
 
 const f = createUploadthing();
 

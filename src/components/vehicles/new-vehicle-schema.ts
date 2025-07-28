@@ -1,5 +1,8 @@
 import { z } from "zod/v4";
 
+// Check if we're in a browser environment
+const isBrowser = typeof window !== "undefined";
+
 export const vehicleFormSchema = z.object({
   // Step 1: General Information
   brand: z.string().min(1, { error: "La marca es requerida" }),
@@ -16,7 +19,9 @@ export const vehicleFormSchema = z.object({
   color: z.string().min(1, { error: "El color es requerido" }),
   status: z.string().min(1, { error: "El estado es requerido" }),
   condition: z.string().min(1, { error: "La condición es requerida" }),
-  images: z.array(z.instanceof(File)).optional().default([]),
+  images: isBrowser
+    ? z.array(z.instanceof(File)).optional().default([])
+    : z.array(z.any()).optional().default([]),
   description: z.string().optional(),
 
   // Step 2: Technical Specifications

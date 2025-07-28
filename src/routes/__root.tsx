@@ -17,7 +17,7 @@ import { ThemeProvider } from "~/components/theme-provider";
 import { cn } from "~/lib/utils";
 import { AuthProvider } from "~/components/auth-provider";
 import { Toaster } from "~/components/ui/toaster";
-import { getUser } from "~/server/api";
+import { getUser } from "~/server/auth";
 
 const fetchUser = createServerFn({ method: "GET" }).handler(async () => {
   const user = await getUser();
@@ -106,7 +106,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const { user } = Route.useRouteContext();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

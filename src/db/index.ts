@@ -3,6 +3,11 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema"; // Import your Drizzle schema definitions
 
+// Prevent this from running on the client side
+if (typeof window !== 'undefined') {
+  throw new Error('Database client should not be imported on the client side');
+}
+
 // Access the secure server environment variable for the database URL
 const databaseUrl = process.env.DATABASE_URL; // Use the variable name you configured
 

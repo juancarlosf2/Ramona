@@ -34,14 +34,6 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-export const Route = createFileRoute("/login")({
-  component: AuthPage,
-  beforeLoad: ({ context }) => {
-    if (context.user) {
-      throw redirect({ to: "/" });
-    }
-  },
-});
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -60,6 +52,15 @@ const loginSchema = z.object({
 
 // Types
 type LoginFormValues = z.infer<typeof loginSchema>;
+
+export const Route = createFileRoute("/login")({
+  component: AuthPage,
+  beforeLoad: ({ context }) => {
+    if (context.user) {
+      throw redirect({ to: "/" });
+    }
+  },
+});
 
 export default function AuthPage() {
   const router = useRouter();
