@@ -1,0 +1,74 @@
+[build]
+  # Build command
+  command = "pnpm install && pnpm build"
+  
+  # Directory to publish (where the built files are located)
+  publish = ".output/public"
+  
+  # Functions directory for serverless functions
+  functions = ".output/server"
+
+[build.environment]
+  # Node.js version
+  NODE_VERSION = "22"
+  
+  # Enable pnpm
+  NPM_FLAGS = "--version"
+  PNPM_VERSION = "9"
+  
+  # Set build environment
+  NODE_ENV = "production"
+
+# Build processing settings
+[build.processing]
+  skip_processing = false
+
+# Build processing for CSS and JS
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+# Headers for better caching and security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Redirect rules for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+
+# API routes handling for TanStack Start
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/render"
+  status = 200
+
+# Catch-all redirect for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/render"
+  status = 200
+
+# Environment variables (these will be set in Netlify UI)
+# DATABASE_URL
+# SUPABASE_URL
+# SUPABASE_ANON_KEY
+# UPLOADTHING_SECRET
+# UPLOADTHING_TOKEN
